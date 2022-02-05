@@ -5,6 +5,8 @@ import urllib3
 from os.path import exists
 import polylinetoimg
 import time
+import os
+import shutil
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -79,6 +81,24 @@ def get_data(activities, data_type):
             get_activity_detail(activites_url, header, a, output_dir)
             get_activity_comments(activites_url, header, a, output_dir)
             get_activity_kudos(activites_url, header, a, output_dir)
+
+
+def download_activity_image(activity_id, url):
+    filepath = "{0}/{1}.png".format(os.path.dirname(os.path.abspath(__file__)), activity_id)
+
+    if exists(filepath):
+        return filepath
+
+    if not url:
+        return ""
+
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(filepath, 'wb') as f:
+            shutil.copyfileobj(response.raw, f)
+        return filepath
+
+    return ""
 
 
 def process_segment(segment, detailed):
@@ -222,7 +242,7 @@ def process_activity_details(activity):
     activity_details_string += "| **Max Speed:** | {0} kph | {1} mph |  \n".format(max_speed_kmh, max_speed_mph)
 
     if activity["has_heartrate"]:
-        activity_details_string += "| **Heart Rate:** | {0} bpm avg | {1} bpm max  \n".format(round(activity["average_heartrate"]), round(activity["max_heartrate"]))
+        activity_details_string += "| **Heart Rate:** | {0} bpm avg | {1} bpm max |  \n".format(round(activity["average_heartrate"]), round(activity["max_heartrate"]))
 
     activity_details_string += "  \n[{attachment}]  \n"
 
@@ -287,6 +307,8 @@ def process_activities(activity_ids, source_dir):
         entry_datetime = activity_details["start_date_local"]
         entry_timezone = activity_details["timezone"][activity_details["timezone"].index(") ") + 2:]
         entry_coords = "{0} {1}".format(activity_details["start_latlng"][0], activity_details["start_latlng"][1]) if activity_details["start_latlng"] else ""
+        entry_tags = activity_details["type"]
+        downloaded_image = download_activity_image(a, entry_image)
 
         """
         print(entry_datetime)
@@ -296,15 +318,16 @@ def process_activities(activity_ids, source_dir):
         print(entry_body)
         """
 
-        shell_command_format = "dayone2 -j Strava --isoDate {0} --time-zone {1} --attachments {2}"
-        shell_command = shell_command_format.format(entry_datetime, entry_timezone, entry_image)
+        shell_command_format = "dayone2 -j Strava --isoDate {0} --time-zone {1} --attachments \"{2}\" --tags {3}"
+        shell_command = shell_command_format.format(entry_datetime, entry_timezone, downloaded_image, entry_tags)
 
         if entry_coords:
             shell_command += " --coordinate {0}".format(entry_coords)
 
-        shell_command += " {0}".format(entry_body)
-        print(shell_command)
+        shell_command += " new \"{0}\"".format(entry_body)
 
+        #print(shell_command)
+        os.system(shell_command)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
