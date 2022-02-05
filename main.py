@@ -182,7 +182,7 @@ def process_splits(activity):
     return splits_string
 
 def process_activity_details(activity):
-    description = "{0}  \n\n".format(activity["description"]) if activity["description"] is not None else ""
+    description = "{0}  \n".format(activity["description"]) if activity["description"] is not None else ""
     distance_km = round(activity["distance"] / 1000, 2)
     distance_mi = round((activity["distance"] / 1000) * 0.6213712, 2)
     moving_time = time.gmtime(activity["moving_time"])
@@ -211,8 +211,8 @@ def process_activity_details(activity):
     max_speed_kmh = round(activity["max_speed"] * 3.6, 2)
     max_speed_mph = round(max_speed_kmh * 0.6213712, 2)
 
-    #activity_details_string = activity["name"] + '  \n'
-    activity_details_string = description
+    activity_details_string = "# {0}  \n".format(activity["name"])
+    activity_details_string += description
     activity_details_string += "|       |       |       |  \n"
     activity_details_string += "| ----- | ----- | ----- |  \n"
     activity_details_string += "| **Time:** | {0} moving | {1} total |  \n".format(moving_time_output, elapsed_time_output)
@@ -224,7 +224,9 @@ def process_activity_details(activity):
     if activity["has_heartrate"]:
         activity_details_string += "| **Heart Rate:** | {0} bpm avg | {1} bpm max  \n".format(round(activity["average_heartrate"]), round(activity["max_heartrate"]))
 
-    return activity_details_string[:len(activity_details_string)-2]
+    activity_details_string += "  \n[{attachment}]  \n"
+
+    return activity_details_string
 
 
 def process_comments(comments):
@@ -257,17 +259,8 @@ def process_activities(activity_ids, source_dir):
             if activity_details["distance"] < 0.1:
                 continue
 
-            entry_name = activity_details["name"]
             entry_body = process_activity_details(activity_details)
             entry_image = mappy.get_image_url(activity_details["map"]["polyline"])
-
-        activity_comments_file = source_dir + a + "_activityComments.json"
-
-        if exists(activity_comments_file) and activity_details["comment_count"] > 0:
-            comments_json = open(activity_comments_file, "r")
-            comments = json.loads(comments_json.read())
-            entry_body += '\n'
-            entry_body += process_comments(comments)
 
         activity_kudos_file = source_dir + a + "_activityKudos.json"
 
@@ -277,15 +270,40 @@ def process_activities(activity_ids, source_dir):
             entry_body += '\n'
             entry_body += process_kudos(kudos)
 
+        activity_comments_file = source_dir + a + "_activityComments.json"
+
+        if exists(activity_comments_file) and activity_details["comment_count"] > 0:
+            comments_json = open(activity_comments_file, "r")
+            comments = json.loads(comments_json.read())
+            entry_body += '\n'
+            entry_body += process_comments(comments)
+
         entry_body += '\n'
         entry_body += process_segments(activity_details, True)
 
         entry_body += '\n'
         entry_body += process_splits(activity_details)
 
-        print(entry_name)
+        entry_datetime = activity_details["start_date_local"]
+        entry_timezone = activity_details["timezone"][activity_details["timezone"].index(") ") + 2:]
+        entry_coords = "{0} {1}".format(activity_details["start_latlng"][0], activity_details["start_latlng"][1]) if activity_details["start_latlng"] else ""
+
+        """
+        print(entry_datetime)
+        print(entry_timezone)
+        print(entry_coords)
         print(entry_image)
         print(entry_body)
+        """
+
+        shell_command_format = "dayone2 -j Strava --isoDate {0} --time-zone {1} --attachments {2}"
+        shell_command = shell_command_format.format(entry_datetime, entry_timezone, entry_image)
+
+        if entry_coords:
+            shell_command += " --coordinate {0}".format(entry_coords)
+
+        shell_command += " {0}".format(entry_body)
+        print(shell_command)
 
 
 # Press the green button in the gutter to run the script.
