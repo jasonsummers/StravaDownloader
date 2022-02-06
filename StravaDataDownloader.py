@@ -36,40 +36,57 @@ class StravaDataDownloader:
     def get_token(self):
         return self.strava_tokens['access_token']
 
+    def fetch_from_strava(self, url, header, param=""):
+        if param:
+            response = requests.get(url, params=param, headers=header).json()
+        else:
+            response = requests.get(url, headers=header).json()
+
+        if "errors" not in response:
+            return response
+
+        print("Error Downloading from Strava...")
+        print("Message: {0}".format(response["message"]))
+        print("Errors:")
+        for e in response["errors"]:
+            print("    resource: {0}, field: {1}, code: {2}".format(e["resource"], e["field"], e["code"]))
+
+        exit(1)
+
     def get_activity_detail(self, header, activity_id, output_directory):
         the_url = "{0}/{1}".format(self.base_url, activity_id)
 
         param = {'include_all_efforts': 'true'}
-        response = requests.get(the_url, params=param, headers=header).json()
+        response = self.fetch_from_strava(the_url, header, param)
 
-        if not output_directory:
-            return response
+        if output_directory:
+            file = open("{0}{1}_activityDetail.json".format(output_directory, activity_id), "w")
+            json.dump(response, file, indent=4)
+            file.close()
 
-        file = open("{0}{1}_activityDetail.json".format(output_directory, activity_id), "w")
-        json.dump(response, file, indent=4)
-        file.close()
+        return response
 
     def get_activity_comments(self, header, activity_id, output_directory):
         the_url = "{0}/{1}/comments".format(self.base_url, activity_id)
-        response = requests.get(the_url, headers=header).json()
+        response = self.fetch_from_strava(the_url, header)
 
-        if not output_directory:
-            return response
+        if output_directory:
+            file = open("{0}{1}_activityComments.json".format(output_directory, activity_id), "w")
+            json.dump(response, file, indent=4)
+            file.close()
 
-        file = open("{0}{1}_activityComments.json".format(output_directory, activity_id), "w")
-        json.dump(response, file, indent=4)
-        file.close()
+        return response
 
     def get_activity_kudos(self, header, activity_id, output_directory):
         the_url = "{0}/{1}/kudos".format(self.base_url, activity_id)
-        response = requests.get(the_url, headers=header).json()
+        response = self.fetch_from_strava(the_url, header)
 
-        if not output_directory:
-            return response
+        if output_directory:
+            file = open("{0}{1}_activityKudos.json".format(output_directory, activity_id), "w")
+            json.dump(response, file, indent=4)
+            file.close()
 
-        file = open("{0}{1}_activityKudos.json".format(output_directory, activity_id), "w")
-        json.dump(response, file, indent=4)
-        file.close()
+        return response
 
     def get_data(self, activities, data_type, output_dir):
 
@@ -83,7 +100,9 @@ class StravaDataDownloader:
             elif data_type == "kudos":
                 self.get_activity_kudos(header, a, output_dir)
             elif data_type == "all":
-                self.get_activity_detail(header, a, output_dir)
-                self.get_activity_comments(header, a, output_dir)
-                self.get_activity_kudos(header, a, output_dir)
+                detail = self.get_activity_detail(header, a, output_dir)
+                if detail["comment_count"] > 0:
+                    self.get_activity_comments(header, a, output_dir)
+                if detail["kudos_count"] > 0:
+                    self.get_activity_kudos(header, a, output_dir)
 

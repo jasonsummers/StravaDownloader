@@ -71,9 +71,8 @@ def process_activities(activity_ids, source_dir):
             activity_details = json.loads(activity_json.read())
             if activity_details["distance"] < 0.1:
                 continue
-
-            entry_image = mappy.get_image_url(activity_details["map"]["polyline"])
         else:
+            # We have no details for the activity ID so skip it
             continue
 
         activity_kudos_file = source_dir + a + "_activityKudos.json"
@@ -98,11 +97,15 @@ def process_activities(activity_ids, source_dir):
         entry_timezone = activity_details["timezone"][activity_details["timezone"].index(") ") + 2:]
         entry_coords = "{0} {1}".format(activity_details["start_latlng"][0], activity_details["start_latlng"][1]) if activity_details["start_latlng"] else ""
         entry_tags = activity_details["type"]
-        downloaded_image = download_activity_image(a, entry_image)
         entry_body = activity_processor.process_activity(True, True, "detailed", "both")
 
-        shell_command_format = "dayone2 -j Strava --isoDate {0} --time-zone {1} --attachments \"{2}\" --tags {3}"
-        shell_command = shell_command_format.format(entry_datetime, entry_timezone, downloaded_image, entry_tags)
+        shell_command_format = "dayone2 -j Strava --isoDate {0} --time-zone {1} --tags {2}"
+        shell_command = shell_command_format.format(entry_datetime, entry_timezone, entry_tags)
+
+        if activity_details["map"]["polyline"]:
+            entry_image = mappy.get_image_url(activity_details["map"]["polyline"])
+            downloaded_image = download_activity_image(a, entry_image)
+            shell_command += " --attachments \"{0}\"".format(downloaded_image)
 
         if entry_coords:
             shell_command += " --coordinate {0}".format(entry_coords)
