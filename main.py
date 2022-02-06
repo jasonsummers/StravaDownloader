@@ -5,6 +5,7 @@ import urllib3
 from os.path import exists
 import polylinetoimg
 import ActivityProcessor
+import StravaDataDownloader
 import os
 import shutil
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -30,57 +31,10 @@ def get_activity_ids():
     return activities
 
 
-def get_activity_detail(base_url, header, activity_id, output_directory):
-    the_url = base_url + "/" + activity_id
-
-    param = {'include_all_efforts': 'true'}
-    response = requests.get(the_url, params=param, headers=header).json()
-
-    file = open(output_directory + activity_id + "_activityDetail.json", "w")
-    json.dump(response, file, indent=4)
-    file.close()
-
-
-def get_activity_comments(base_url, header, activity_id, output_directory):
-    the_url = base_url + "/" + activity_id + "/comments"
-
-    response = requests.get(the_url, headers=header).json()
-
-    file = open(output_directory + activity_id + "_activityComments.json", "w")
-    json.dump(response, file, indent=4)
-    file.close()
-
-
-def get_activity_kudos(base_url, header, activity_id, output_directory):
-    the_url = base_url + "/" + activity_id + "/kudos"
-
-    response = requests.get(the_url, headers=header).json()
-
-    file = open(output_directory + activity_id + "_activityKudos.json", "w")
-    json.dump(response, file, indent=4)
-    file.close()
-
-
 def get_data(activities, data_type):
-
     output_dir = "/Users/Jason/Desktop/strava_output/"
-    activites_url = "https://www.strava.com/api/v3/activities"
-    access_token = 'strava-access-token-goes-here'
-    print("Access Token = {}\n".format(access_token))
-
-    header = {'Authorization': 'Bearer ' + access_token}
-
-    for a in activities:
-        if data_type == "detail":
-            get_activity_detail(activites_url, header, a, output_dir)
-        elif data_type == "comments":
-            get_activity_comments(activites_url, header, a, output_dir)
-        elif data_type == "kudos":
-            get_activity_kudos(activites_url, header, a, output_dir)
-        elif data_type == "all":
-            get_activity_detail(activites_url, header, a, output_dir)
-            get_activity_comments(activites_url, header, a, output_dir)
-            get_activity_kudos(activites_url, header, a, output_dir)
+    strava = StravaDataDownloader.StravaDataDownloader()
+    strava.get_data(activities, data_type, output_dir)
 
 
 def download_activity_image(activity_id, url):
@@ -103,7 +57,10 @@ def download_activity_image(activity_id, url):
 
 def process_activities(activity_ids, source_dir):
 
-    mappy = polylinetoimg.PolylineToImg("subscription_key_goes_here")
+    with open('settings.json') as settings_file:
+        settings = json.load(settings_file)
+
+    mappy = polylinetoimg.PolylineToImg(settings['azure_maps_key'])
 
     for a in activity_ids:
 
@@ -159,5 +116,5 @@ def process_activities(activity_ids, source_dir):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     activity_ids = get_activity_ids()
-    #get_data(activity_ids, "kudos")
-    process_activities(activity_ids, "/Users/Jason/Desktop/strava_output/")
+    get_data(activity_ids, "all")
+    #process_activities(activity_ids, "/Users/Jason/Desktop/strava_output_swims/")
