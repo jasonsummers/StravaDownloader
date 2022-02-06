@@ -48,6 +48,9 @@ class ActivityProcessor:
     def _process_segments(self, activity, detailed):
         segments_string = "### Segments  \n"
 
+        if "segment_efforts" not in activity or len(activity["segment_efforts"]) == 0:
+            return "{0}No Segments  \n".format(segments_string)
+
         if detailed is True:
             segments_string += "| Segment | Time | Distance | Pace | Avg. Heart Rate | Max Heart Rate |  \n"
             segments_string += "| ----- | ----- | ----- | ----- | ----- | ----- |  \n"
@@ -82,10 +85,15 @@ class ActivityProcessor:
 
         if metric:
             splits_string += "#### Kilometres  \n"
-            splits = activity["splits_metric"]
         else:
             splits_string += "#### Miles  \n"
+
+        if metric and "splits_metric" in activity:
+            splits = activity["splits_metric"]
+        elif "splits_standard" in activity:
             splits = activity["splits_standard"]
+        else:
+            return "{0}No Splits  \n".format(splits_string)
 
         splits_string += "| Split | Time | Speed | Heart Rate |  \n"
         splits_string += "| ----- | ----- | ----- | ----- |  \n"
@@ -94,6 +102,31 @@ class ActivityProcessor:
             splits_string += self._process_split(s, metric)
 
         return splits_string
+
+
+    def _process_laps(self, activity):
+        laps_string = "### Laps  \n"
+
+        if "laps" not in activity or len(activity["laps"]) < 2:
+            return "{0}No Laps  \n".format(laps_string)
+
+        laps_string += "| Lap | Time | Distance | Speed | Heart Rate |  \n"
+        laps_string += "| ----- | ----- | ----- | ----- | ----- |  \n"
+
+        for lap in activity["laps"]:
+            moving_time = time.gmtime(lap["moving_time"])
+            if lap["moving_time"] > 3599:
+                moving_time_output = time.strftime("%H:%M:%S", moving_time)
+            else:
+                moving_time_output = time.strftime("%M:%S", moving_time)
+
+            lap_string_format = "| {0} | {1} | {2}m | {3}m/s avg / {4}m/s max | {5} bpm avg. / {6} bpm max  \n"
+            laps_string += lap_string_format.format(lap["lap_index"], moving_time_output, round(lap["distance"]),
+                                                    round(lap["average_speed"], 2), round(lap["max_speed"], 2),
+                                                    round(lap["average_heartrate"]), round(lap["max_heartrate"]))
+
+        return laps_string
+
 
     def _process_activity_details(self, activity):
         description = "{0}  \n".format(activity["description"]) if activity["description"] is not None else ""
@@ -145,6 +178,54 @@ class ActivityProcessor:
 
         return activity_details_string
 
+    def _process_activity_details_swim(self, activity):
+        description = "{0}  \n".format(activity["description"]) if activity["description"] is not None else ""
+        distance_m = activity["distance"]
+        distance_yd = round((activity["distance"]) * 1.093613, 2)
+        moving_time = time.gmtime(activity["moving_time"])
+        elapsed_time = time.gmtime(activity["elapsed_time"])
+
+        if activity["moving_time"] > 3599:
+            moving_time_output = time.strftime("%H:%M:%S", moving_time)
+        else:
+            moving_time_output = time.strftime("%M:%S", moving_time)
+
+        if activity["elapsed_time"] > 3599:
+            elapsed_time_output = time.strftime("%H:%M:%S", elapsed_time)
+        else:
+            elapsed_time_output = time.strftime("%M:%S", elapsed_time)
+
+        pace_m = float(distance_m) / float(activity["moving_time"])
+
+        segment_pace_yd_seconds = float(activity["moving_time"]) / float(distance_yd)
+        segment_pace_yd_time = time.gmtime(segment_pace_yd_seconds)
+        pace_yd_time_output = time.strftime("%M:%S", segment_pace_yd_time)
+
+        avg_speed_kmh = round(activity["average_speed"] * 3.6, 2)
+        avg_speed_mph = round(avg_speed_kmh * 0.6213712, 2)
+        max_speed_kmh = round(activity["max_speed"] * 3.6, 2)
+        max_speed_mph = round(max_speed_kmh * 0.6213712, 2)
+
+        activity_details_string = "# {0}  \n".format(activity["name"])
+        activity_details_string += description
+        activity_details_string += "|       |       |       |  \n"
+        activity_details_string += "| ----- | ----- | ----- |  \n"
+        activity_details_string += "| **Time:** | {0} moving | {1} total |  \n".format(moving_time_output,
+                                                                                       elapsed_time_output)
+        activity_details_string += "| **Distance:** | {0}km | {1}mi |  \n".format(distance_m, distance_yd)
+        activity_details_string += "| **Pace:** | {0} m/s | {1} min/mi |  \n".format(pace_m,
+                                                                                        pace_yd_time_output)
+        activity_details_string += "| **Avg. Speed:** | {0} kph | {1} mph |  \n".format(avg_speed_kmh, avg_speed_mph)
+        activity_details_string += "| **Max Speed:** | {0} kph | {1} mph |  \n".format(max_speed_kmh, max_speed_mph)
+
+        if activity["has_heartrate"]:
+            activity_details_string += "| **Heart Rate:** | {0} bpm avg | {1} bpm max |  \n".format(
+                round(activity["average_heartrate"]), round(activity["max_heartrate"]))
+
+        activity_details_string += "  \n[{attachment}]"
+
+        return activity_details_string
+
     def _process_comments(self, comments):
         comment_string = '### Comments\n'
         for c in comments:
@@ -160,8 +241,11 @@ class ActivityProcessor:
 
         return kudos_string
 
-    def process_activity(self, include_kudos, include_comments, segments, which_splits):
-        return_string = self._process_activity_details(self.activity)
+    def process_activity(self, include_kudos, include_comments, segments, which_splits, include_laps):
+        if self.activity["type"] == "Swim":
+            return_string = self._process_activity_details_swim(self.activity)
+        else:
+            return_string = self._process_activity_details(self.activity)
 
         if include_kudos and self.kudos:
             return_string += "  \n{0}".format(self._process_kudos(self.kudos))
@@ -183,5 +267,8 @@ class ActivityProcessor:
 
             if which_splits.lower() == "mi" or which_splits.lower() == "both":
                 return_string += "  \n{0}".format(self._process_splits(self.activity, False))
+
+        if include_laps:
+            return_string += "  \n{0}".format(self._process_laps(self.activity))
 
         return return_string
