@@ -3,5 +3,10 @@
     "strava_client_secret": "strava-client-secret",
     "azure_maps_key": "azure-maps-key",
     "data_location": "/path/to/strava/save/location",
-    "strava_activities_file": "/path/to/strava/export/activities.csv"
+    "strava_activities_file": "/path/to/strava/export/activities.csv",
+    "include_strava_comments": true,
+    "include_strava_kudos": true,
+    "include_segments": "detailed",
+    "which_splits": "both",
+    "include_laps": true
 }

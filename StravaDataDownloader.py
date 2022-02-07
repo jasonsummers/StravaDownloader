@@ -58,8 +58,10 @@ class StravaDataDownloader:
         the_url = "{0}/{1}".format(self.base_url, activity_id)
         file_path = "{0}{1}_activityDetail.json".format(output_directory, activity_id)
 
-        if exists(file_path):
-            return json.load(file_path)
+        if exists(file_path) and output_directory:
+            with open(file_path, "r") as file:
+                data = json.loads(file.read())
+            return data
 
         param = {'include_all_efforts': 'true'}
         response = self.fetch_from_strava(the_url, header, param)
@@ -74,8 +76,10 @@ class StravaDataDownloader:
         the_url = "{0}/{1}/comments".format(self.base_url, activity_id)
         file_path = "{0}{1}_activityComments.json".format(output_directory, activity_id)
 
-        if exists(file_path):
-            return json.load(file_path)
+        if exists(file_path) and output_directory:
+            with open(file_path, "r") as file:
+                data = json.loads(file.read())
+            return data
 
         response = self.fetch_from_strava(the_url, header)
 
@@ -89,8 +93,10 @@ class StravaDataDownloader:
         the_url = "{0}/{1}/kudos".format(self.base_url, activity_id)
         file_path = "{0}{1}_activityKudos.json".format(output_directory, activity_id)
 
-        if exists(file_path):
-            return json.load(file_path)
+        if exists(file_path) and output_directory:
+            with open(file_path, "r") as file:
+                data = json.loads(file.read())
+            return data
 
         response = self.fetch_from_strava(the_url, header)
 
@@ -105,16 +111,17 @@ class StravaDataDownloader:
         header = {'Authorization': 'Bearer ' + self.strava_tokens['access_token']}
 
         for a in activities:
-            if data_type == "detail":
-                self.get_activity_detail(header, a, output_dir)
-            elif data_type == "comments":
-                self.get_activity_comments(header, a, output_dir)
-            elif data_type == "kudos":
-                self.get_activity_kudos(header, a, output_dir)
-            elif data_type == "all":
+            if data_type == "all":
                 detail = self.get_activity_detail(header, a, output_dir)
                 if detail["comment_count"] > 0:
                     self.get_activity_comments(header, a, output_dir)
                 if detail["kudos_count"] > 0:
                     self.get_activity_kudos(header, a, output_dir)
+                return
+            if "detail" in data_type:
+                self.get_activity_detail(header, a, output_dir)
+            if "comments" in data_type:
+                self.get_activity_comments(header, a, output_dir)
+            if "kudos" in data_type:
+                self.get_activity_kudos(header, a, output_dir)
 
