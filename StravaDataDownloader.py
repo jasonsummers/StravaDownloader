@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+from os.path import exists
 
 class StravaDataDownloader:
 
@@ -55,36 +56,47 @@ class StravaDataDownloader:
 
     def get_activity_detail(self, header, activity_id, output_directory):
         the_url = "{0}/{1}".format(self.base_url, activity_id)
+        file_path = "{0}{1}_activityDetail.json".format(output_directory, activity_id)
+
+        if exists(file_path):
+            return json.load(file_path)
 
         param = {'include_all_efforts': 'true'}
         response = self.fetch_from_strava(the_url, header, param)
 
         if output_directory:
-            file = open("{0}{1}_activityDetail.json".format(output_directory, activity_id), "w")
-            json.dump(response, file, indent=4)
-            file.close()
+            with open(file_path, "w") as file:
+                json.dump(response, file, indent=4)
 
         return response
 
     def get_activity_comments(self, header, activity_id, output_directory):
         the_url = "{0}/{1}/comments".format(self.base_url, activity_id)
+        file_path = "{0}{1}_activityComments.json".format(output_directory, activity_id)
+
+        if exists(file_path):
+            return json.load(file_path)
+
         response = self.fetch_from_strava(the_url, header)
 
         if output_directory:
-            file = open("{0}{1}_activityComments.json".format(output_directory, activity_id), "w")
-            json.dump(response, file, indent=4)
-            file.close()
+            with open(file_path, "w") as file:
+                json.dump(response, file, indent=4)
 
         return response
 
     def get_activity_kudos(self, header, activity_id, output_directory):
         the_url = "{0}/{1}/kudos".format(self.base_url, activity_id)
+        file_path = "{0}{1}_activityKudos.json".format(output_directory, activity_id)
+
+        if exists(file_path):
+            return json.load(file_path)
+
         response = self.fetch_from_strava(the_url, header)
 
         if output_directory:
-            file = open("{0}{1}_activityKudos.json".format(output_directory, activity_id), "w")
-            json.dump(response, file, indent=4)
-            file.close()
+            with open(file_path, "w") as file:
+                json.dump(response, file, indent=4)
 
         return response
 
