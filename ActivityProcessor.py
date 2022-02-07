@@ -128,60 +128,36 @@ class ActivityProcessor:
         return laps_string
 
 
-    def _process_activity_details(self, activity):
-        description = "{0}  \n".format(activity["description"]) if activity["description"] is not None else ""
-        distance_km = round(activity["distance"] / 1000, 2)
-        distance_mi = round((activity["distance"] / 1000) * 0.6213712, 2)
-        moving_time = time.gmtime(activity["moving_time"])
-        elapsed_time = time.gmtime(activity["elapsed_time"])
-
-        if activity["moving_time"] > 3599:
-            moving_time_output = time.strftime("%H:%M:%S", moving_time)
+    def _process_distance_and_pace(self, activity):
+        if activity["type"] == "Swim":
+            distance_metric = round(activity["distance"])
+            distance_imper = round((activity["distance"]) * 1.093613)
         else:
-            moving_time_output = time.strftime("%M:%S", moving_time)
+            distance_metric = round(activity["distance"] / 1000, 2)
+            distance_imper = round((activity["distance"] / 1000) * 0.6213712, 2)
 
-        if activity["elapsed_time"] > 3599:
-            elapsed_time_output = time.strftime("%H:%M:%S", elapsed_time)
-        else:
-            elapsed_time_output = time.strftime("%M:%S", elapsed_time)
-
-        pace_km_seconds = float(activity["moving_time"]) / float(distance_km)
+        pace_km_seconds = float(activity["moving_time"]) / float(distance_metric)
         pace_km_time = time.gmtime(pace_km_seconds)
         pace_km_time_output = time.strftime("%M:%S", pace_km_time)
 
-        segment_pace_mi_seconds = float(activity["moving_time"]) / float(distance_mi)
+        segment_pace_mi_seconds = float(activity["moving_time"]) / float(distance_imper)
         segment_pace_mi_time = time.gmtime(segment_pace_mi_seconds)
         pace_mi_time_output = time.strftime("%M:%S", segment_pace_mi_time)
 
-        avg_speed_kmh = round(activity["average_speed"] * 3.6, 2)
-        avg_speed_mph = round(avg_speed_kmh * 0.6213712, 2)
-        max_speed_kmh = round(activity["max_speed"] * 3.6, 2)
-        max_speed_mph = round(max_speed_kmh * 0.6213712, 2)
+        pace_m = round(float(distance_metric) / float(activity["moving_time"]), 2)
 
-        activity_details_string = "# {0}  \n".format(activity["name"])
-        activity_details_string += description
-        activity_details_string += "|       |       |       |  \n"
-        activity_details_string += "| ----- | ----- | ----- |  \n"
-        activity_details_string += "| **Time:** | {0} moving | {1} total |  \n".format(moving_time_output,
-                                                                                       elapsed_time_output)
-        activity_details_string += "| **Distance:** | {0}km | {1}mi |  \n".format(distance_km, distance_mi)
-        activity_details_string += "| **Pace:** | {0} min/km | {1} min/mi |  \n".format(pace_km_time_output,
-                                                                                        pace_mi_time_output)
-        activity_details_string += "| **Avg. Speed:** | {0} kph | {1} mph |  \n".format(avg_speed_kmh, avg_speed_mph)
-        activity_details_string += "| **Max Speed:** | {0} kph | {1} mph |  \n".format(max_speed_kmh, max_speed_mph)
+        if activity["type"] == "Swim":
+            distance_string = "| **Distance:** | {0} metres | {1} yards |  \n".format(distance_metric, distance_imper)
+            pace_string = "| **Pace:** | {0} m/s | |  \n".format(pace_m)
+        else:
+            distance_string = "| **Distance:** | {0}km | {1}mi |  \n".format(distance_metric, distance_imper)
+            pace_string = "| **Pace:** | {0} min/km | {1} min/mi |  \n".format(pace_km_time_output, pace_mi_time_output)
 
-        if activity["has_heartrate"]:
-            activity_details_string += "| **Heart Rate:** | {0} bpm avg | {1} bpm max |  \n".format(
-                round(activity["average_heartrate"]), round(activity["max_heartrate"]))
+        return distance_string, pace_string
 
-        activity_details_string += "  \n[{attachment}]"
 
-        return activity_details_string
-
-    def _process_activity_details_swim(self, activity):
+    def _process_activity_details(self, activity):
         description = "{0}  \n".format(activity["description"]) if activity["description"] is not None else ""
-        distance_m = activity["distance"]
-        distance_yd = round((activity["distance"]) * 1.093613, 2)
         moving_time = time.gmtime(activity["moving_time"])
         elapsed_time = time.gmtime(activity["elapsed_time"])
 
@@ -195,11 +171,7 @@ class ActivityProcessor:
         else:
             elapsed_time_output = time.strftime("%M:%S", elapsed_time)
 
-        pace_m = float(distance_m) / float(activity["moving_time"])
-
-        segment_pace_yd_seconds = float(activity["moving_time"]) / float(distance_yd)
-        segment_pace_yd_time = time.gmtime(segment_pace_yd_seconds)
-        pace_yd_time_output = time.strftime("%M:%S", segment_pace_yd_time)
+        (distance_string, pace_string) = self._process_distance_and_pace(activity)
 
         avg_speed_kmh = round(activity["average_speed"] * 3.6, 2)
         avg_speed_mph = round(avg_speed_kmh * 0.6213712, 2)
@@ -212,9 +184,8 @@ class ActivityProcessor:
         activity_details_string += "| ----- | ----- | ----- |  \n"
         activity_details_string += "| **Time:** | {0} moving | {1} total |  \n".format(moving_time_output,
                                                                                        elapsed_time_output)
-        activity_details_string += "| **Distance:** | {0}km | {1}mi |  \n".format(distance_m, distance_yd)
-        activity_details_string += "| **Pace:** | {0} m/s | {1} min/mi |  \n".format(pace_m,
-                                                                                        pace_yd_time_output)
+        activity_details_string += distance_string
+        activity_details_string += pace_string
         activity_details_string += "| **Avg. Speed:** | {0} kph | {1} mph |  \n".format(avg_speed_kmh, avg_speed_mph)
         activity_details_string += "| **Max Speed:** | {0} kph | {1} mph |  \n".format(max_speed_kmh, max_speed_mph)
 
@@ -222,7 +193,8 @@ class ActivityProcessor:
             activity_details_string += "| **Heart Rate:** | {0} bpm avg | {1} bpm max |  \n".format(
                 round(activity["average_heartrate"]), round(activity["max_heartrate"]))
 
-        activity_details_string += "  \n[{attachment}]"
+        if activity["map"]["polyline"]:
+            activity_details_string += "  \n[{attachment}]"
 
         return activity_details_string
 
@@ -242,10 +214,8 @@ class ActivityProcessor:
         return kudos_string
 
     def process_activity(self, include_kudos, include_comments, segments, which_splits, include_laps):
-        if self.activity["type"] == "Swim":
-            return_string = self._process_activity_details_swim(self.activity)
-        else:
-            return_string = self._process_activity_details(self.activity)
+
+        return_string = self._process_activity_details(self.activity)
 
         if include_kudos and self.kudos:
             return_string += "  \n{0}".format(self._process_kudos(self.kudos))
