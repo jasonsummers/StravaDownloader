@@ -11,9 +11,8 @@ import shutil
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_activity_ids():
+def get_activity_ids(strava_activities_file):
     from dateutil import parser
-    strava_activities_file = "/Users/Jason/Downloads/export_2111200/activities.csv"
 
     activities = []
     with open(strava_activities_file) as activities_csv:
@@ -31,14 +30,13 @@ def get_activity_ids():
     return activities
 
 
-def get_data(activities, data_type):
-    output_dir = "/Users/Jason/Desktop/strava_output/"
+def get_data(activities, data_type, output_dir):
     strava = StravaDataDownloader.StravaDataDownloader()
     strava.get_data(activities, data_type, output_dir)
 
 
-def download_activity_image(activity_id, url):
-    filepath = "{0}/{1}.png".format(os.path.dirname(os.path.abspath(__file__)), activity_id)
+def download_activity_image(activity_id, url, output_dir):
+    filepath = "{0}/map_images/{1}.png".format(output_dir, activity_id)
 
     if exists(filepath):
         return filepath
@@ -55,12 +53,11 @@ def download_activity_image(activity_id, url):
     return ""
 
 
-def process_activities(activity_ids, source_dir):
-
-    with open('settings.json') as settings_file:
-        settings = json.load(settings_file)
+def process_activities(activity_ids, settings):
 
     mappy = polylinetoimg.PolylineToImg(settings['azure_maps_key'])
+
+    source_dir = settings["data_location"]
 
     for a in activity_ids:
 
@@ -107,7 +104,7 @@ def process_activities(activity_ids, source_dir):
 
         if activity_details["map"]["polyline"]:
             entry_image = mappy.get_image_url(activity_details["map"]["polyline"])
-            downloaded_image = download_activity_image(a, entry_image)
+            downloaded_image = download_activity_image(a, entry_image, source_dir)
             shell_command += " --attachments \"{0}\"".format(downloaded_image)
 
         shell_command += " -- new \"{0}\"".format(entry_body)
@@ -118,6 +115,11 @@ def process_activities(activity_ids, source_dir):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    activity_ids = get_activity_ids()
-    #get_data(activity_ids, "all")
-    process_activities(activity_ids, "/Users/Jason/Desktop/strava_output_swims/")
+
+    with open('settings.json') as settings_file:
+        settings = json.load(settings_file)
+
+    activity_ids = get_activity_ids(settings["strava_activities_file"])
+
+    #get_data(activity_ids, "all", settings["data_location"])
+    process_activities(activity_ids, settings["data_location"])
