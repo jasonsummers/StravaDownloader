@@ -1,8 +1,11 @@
 import csv
+import datetime
 import json
 import requests
 import urllib3
 from os.path import exists
+
+import Models
 import polylinetoimg
 import ActivityProcessor
 import StravaDataDownloader
@@ -67,8 +70,9 @@ def process_activities(activity_ids, settings, output_format, journal_name):
 
         if exists(activity_json_file):
             with open(activity_json_file, "r") as activity_json:
-                activity_details = json.loads(activity_json.read())
-            if activity_details["distance"] < 0.1:
+                activity_details_json = json.loads(activity_json.read())
+                activity_details = Models.Activity.from_dict(activity_details_json)
+            if activity_details.distance < 0.1:
                 continue
         else:
             # We have no details for the activity ID so skip it
@@ -76,20 +80,22 @@ def process_activities(activity_ids, settings, output_format, journal_name):
 
         activity_kudos_file = source_dir + a + "_activityKudos.json"
 
-        if settings["include_strava_kudos"] and exists(activity_kudos_file) and activity_details["kudos_count"] > 0:
+        if settings["include_strava_kudos"] and exists(activity_kudos_file) and activity_details.kudos_count > 0:
             with open(activity_kudos_file, "r") as kudos_json:
-                kudos = json.loads(kudos_json.read())
+                kudos_dict = json.loads(kudos_json.read())
+                kudos = Models.Kudoser.list_from_dict_array(kudos_dict)
         else:
-            kudos = ""
+            kudos = None
 
         activity_comments_file = source_dir + a + "_activityComments.json"
 
         if settings["include_strava_comments"] and exists(activity_comments_file)\
-                and activity_details["comment_count"] > 0:
+                and activity_details.comment_count > 0:
             with open(activity_comments_file, "r") as comments_json:
-                comments = json.loads(comments_json.read())
+                comments_dict = json.loads(comments_json.read())
+                comments = Models.Comment.list_from_dict_array(comments_dict)
         else:
-            comments = ""
+            comments = None
 
         activity_processor = ActivityProcessor.ActivityProcessor(activity_details, kudos, comments)
         entry_body = activity_processor.process_activity(settings["include_strava_kudos"],
@@ -101,11 +107,11 @@ def process_activities(activity_ids, settings, output_format, journal_name):
             print(entry_body)
             continue
 
-        entry_datetime = activity_details["start_date_local"]
-        entry_timezone = activity_details["timezone"][activity_details["timezone"].index(") ") + 2:]
-        entry_coords = "{0} {1}".format(activity_details["start_latlng"][0], activity_details["start_latlng"][1])\
-            if activity_details["start_latlng"] else ""
-        entry_tags = activity_details["type"]
+        entry_datetime = activity_details.start_date_local
+        entry_timezone = activity_details.timezone[activity_details.timezone.index(") ") + 2:]
+        entry_coords = "{0} {1}".format(activity_details.start_latlng[0], activity_details.start_latlng[1])\
+            if activity_details.start_latlng else ""
+        entry_tags = activity_details.type
 
         shell_command_format = "dayone2 -j {0} --isoDate {1} --time-zone {2} --tags {3}"
         shell_command = shell_command_format.format(journal_name, entry_datetime, entry_timezone, entry_tags)
@@ -113,8 +119,8 @@ def process_activities(activity_ids, settings, output_format, journal_name):
         if entry_coords:
             shell_command += " --coordinate {0}".format(entry_coords)
 
-        if activity_details["map"]["polyline"]:
-            entry_image = mappy.get_image_url(activity_details["map"]["polyline"])
+        if activity_details.map.polyline:
+            entry_image = mappy.get_image_url(activity_details.map.polyline)
             downloaded_image = download_activity_image(a, entry_image, source_dir)
             shell_command += " --attachments \"{0}\"".format(downloaded_image)
 
@@ -180,3 +186,10 @@ def main(arg):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+
+    #strava = StravaDataDownloader.StravaDataDownloader()
+    #before = None
+    #after = datetime.datetime(2022, 1, 1)
+    #activities = strava.get_activities(before, after)
+    #print(activities)
+

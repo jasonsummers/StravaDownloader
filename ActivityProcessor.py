@@ -1,74 +1,79 @@
 import time
+import Models
+from typing import List
+
 
 class ActivityProcessor:
 
-    def __init__(self, activity, kudos, comments):
+    def __init__(self, activity: Models.Activity, kudos, comments):
         self.activity = activity
         self.kudos = kudos
         self.comments = comments
 
-    def _process_segment(self, segment, detailed):
-        if segment["pr_rank"] == 1:
+    @staticmethod
+    def _process_segment(segment: Models.SegmentEffort, detailed: bool):
+        if segment.pr_rank == 1:
             pr_suffix = "\U0001F947"
-        elif segment["pr_rank"] == 2:
+        elif segment.pr_rank == 2:
             pr_suffix = "\U0001F948"
-        elif segment["pr_rank"] == 3:
+        elif segment.pr_rank == 3:
             pr_suffix = "\U0001F949"
         else:
             pr_suffix = ""
 
-        segment_pr = " {0}".format(pr_suffix) if segment["pr_rank"] is not None else ""
-        segment_distance_km = round(segment["distance"] / 1000, 2)
-        segment_distance_mi = round((segment["distance"] / 1000) * 0.6213712, 2)
-        segment_time = time.gmtime(segment["moving_time"])
+        segment_pr = " {0}".format(pr_suffix) if segment.pr_rank is not None else ""
+        segment_distance_km = round(segment.distance / 1000, 2)
+        segment_distance_mi = round((segment.distance / 1000) * 0.6213712, 2)
+        segment_time = time.gmtime(segment.moving_time)
 
-        if segment["moving_time"] > 3599:
+        if segment.moving_time > 3599:
             segment_time_output = time.strftime("%H:%M:%S", segment_time)
         else:
             segment_time_output = time.strftime("%M:%S", segment_time)
 
-        segment_pace_km_seconds = float(segment["moving_time"]) / float(segment_distance_km)
+        segment_pace_km_seconds = float(segment.moving_time) / float(segment_distance_km)
         segment_pace_km_time = time.gmtime(segment_pace_km_seconds)
         segment_pace_km_time_output = time.strftime("%M:%S", segment_pace_km_time)
 
-        segment_pace_mi_seconds = float(segment["moving_time"]) / float(segment_distance_mi)
+        segment_pace_mi_seconds = float(segment.moving_time) / float(segment_distance_mi)
         segment_pace_mi_time = time.gmtime(segment_pace_mi_seconds)
         segment_pace_mi_time_output = time.strftime("%M:%S", segment_pace_mi_time)
 
         if detailed is False:
-            return "{0} {1}  \n".format(segment["name"], segment_pr)
+            return "{0} {1}  \n".format(segment.name, segment_pr)
 
         string_format = "| {0}{1} | {2} | {3}km / {4}mi | {5}min/km / {6}min/mi | {7} bpm | {8} bpm |  \n"
 
-        return string_format.format(segment["name"], segment_pr, segment_time_output,
+        return string_format.format(segment.name, segment_pr, segment_time_output,
                                     segment_distance_km, segment_distance_mi, segment_pace_km_time_output,
-                                    segment_pace_mi_time_output, round(segment["average_heartrate"]),
-                                    round(segment["max_heartrate"]))
+                                    segment_pace_mi_time_output, round(segment.average_heartrate),
+                                    round(segment.max_heartrate))
 
-    def _process_segments(self, activity, detailed):
+    def _process_segments(self, activity: Models.Activity, detailed: bool):
         segments_string = "### Segments  \n"
 
-        if "segment_efforts" not in activity or len(activity["segment_efforts"]) == 0:
+        if len(activity.segment_efforts) == 0:
             return "{0}No Segments  \n".format(segments_string)
 
         if detailed is True:
             segments_string += "| Segment | Time | Distance | Pace | Avg. Heart Rate | Max Heart Rate |  \n"
             segments_string += "| ----- | ----- | ----- | ----- | ----- | ----- |  \n"
 
-        for s in activity["segment_efforts"]:
+        for s in activity.segment_efforts:
             segments_string += self._process_segment(s, detailed)
 
         return segments_string
 
-    def _process_split(self, split, metric):
-        moving_time = time.gmtime(split["moving_time"])
+    @staticmethod
+    def _process_split(split: Models.Split, metric: bool):
+        moving_time = time.gmtime(split.moving_time)
 
-        if split["moving_time"] > 3599:
+        if split.moving_time > 3599:
             moving_time_output = time.strftime("%H:%M:%S", moving_time)
         else:
             moving_time_output = time.strftime("%M:%S", moving_time)
 
-        speed = round(split["average_speed"] * 3.6, 2)
+        speed = round(split.average_speed * 3.6, 2)
         if metric is False:
             speed = round(speed * 0.6213712, 2)
 
@@ -77,10 +82,10 @@ class ActivityProcessor:
         else:
             speed_suffix = "mph"
 
-        return "| {0} | {1} | {2} {3} | {4} bpm |  \n".format(split["split"], moving_time_output, speed,
-                                                              speed_suffix, round(split["average_heartrate"]))
+        return "| {0} | {1} | {2} {3} | {4} bpm |  \n".format(split.split, moving_time_output, speed,
+                                                              speed_suffix, round(split.average_heartrate))
 
-    def _process_splits(self, activity, metric):
+    def _process_splits(self, activity: Models.Activity, metric: bool):
         splits_string = ""
 
         if metric:
@@ -88,10 +93,10 @@ class ActivityProcessor:
         else:
             splits_string += "#### Miles  \n"
 
-        if metric and "splits_metric" in activity:
-            splits = activity["splits_metric"]
-        elif "splits_standard" in activity:
-            splits = activity["splits_standard"]
+        if metric and len(activity.splits_metric) > 0:
+            splits = activity.splits_metric
+        elif len(activity.splits_standard) > 0:
+            splits = activity.splits_standard
         else:
             return "{0}No Splits  \n".format(splits_string)
 
@@ -103,50 +108,50 @@ class ActivityProcessor:
 
         return splits_string
 
-
-    def _process_laps(self, activity):
+    @staticmethod
+    def _process_laps(activity: Models.Activity):
         laps_string = "### Laps  \n"
 
-        if "laps" not in activity or len(activity["laps"]) < 2:
+        if len(activity.laps) < 2:
             return "{0}No Laps  \n".format(laps_string)
 
         laps_string += "| Lap | Time | Distance | Speed | Heart Rate |  \n"
         laps_string += "| ----- | ----- | ----- | ----- | ----- |  \n"
 
-        for lap in activity["laps"]:
-            moving_time = time.gmtime(lap["moving_time"])
-            if lap["moving_time"] > 3599:
+        for lap in activity.laps:
+            moving_time = time.gmtime(lap.moving_time)
+            if lap.moving_time > 3599:
                 moving_time_output = time.strftime("%H:%M:%S", moving_time)
             else:
                 moving_time_output = time.strftime("%M:%S", moving_time)
 
             lap_string_format = "| {0} | {1} | {2}m | {3}m/s avg / {4}m/s max | {5} bpm avg. / {6} bpm max  \n"
-            laps_string += lap_string_format.format(lap["lap_index"], moving_time_output, round(lap["distance"]),
-                                                    round(lap["average_speed"], 2), round(lap["max_speed"], 2),
-                                                    round(lap["average_heartrate"]), round(lap["max_heartrate"]))
+            laps_string += lap_string_format.format(lap.lap_index, moving_time_output, round(lap.distance),
+                                                    round(lap.average_speed, 2), round(lap.max_speed, 2),
+                                                    round(lap.average_heartrate), round(lap.max_heartrate))
 
         return laps_string
 
-
-    def _process_distance_and_pace(self, activity):
-        if activity["type"] == "Swim":
-            distance_metric = round(activity["distance"])
-            distance_imper = round((activity["distance"]) * 1.093613)
+    @staticmethod
+    def _process_distance_and_pace(activity: Models.Activity):
+        if activity.type == "Swim":
+            distance_metric = round(activity.distance)
+            distance_imper = round(activity.distance * 1.093613)
         else:
-            distance_metric = round(activity["distance"] / 1000, 2)
-            distance_imper = round((activity["distance"] / 1000) * 0.6213712, 2)
+            distance_metric = round(activity.distance / 1000, 2)
+            distance_imper = round((activity.distance / 1000) * 0.6213712, 2)
 
-        pace_km_seconds = float(activity["moving_time"]) / float(distance_metric)
+        pace_km_seconds = float(activity.moving_time) / float(distance_metric)
         pace_km_time = time.gmtime(pace_km_seconds)
         pace_km_time_output = time.strftime("%M:%S", pace_km_time)
 
-        segment_pace_mi_seconds = float(activity["moving_time"]) / float(distance_imper)
+        segment_pace_mi_seconds = float(activity.moving_time) / float(distance_imper)
         segment_pace_mi_time = time.gmtime(segment_pace_mi_seconds)
         pace_mi_time_output = time.strftime("%M:%S", segment_pace_mi_time)
 
-        pace_m = round(float(distance_metric) / float(activity["moving_time"]), 2)
+        pace_m = round(float(distance_metric) / float(activity.moving_time), 2)
 
-        if activity["type"] == "Swim":
+        if activity.type == "Swim":
             distance_string = "| **Distance:** | {0} metres | {1} yards |  \n".format(distance_metric, distance_imper)
             pace_string = "| **Pace:** | {0} m/s | |  \n".format(pace_m)
         else:
@@ -155,30 +160,29 @@ class ActivityProcessor:
 
         return distance_string, pace_string
 
+    def _process_activity_details(self, activity: Models.Activity):
+        description = "{0}  \n".format(activity.description) if activity.description is not None else ""
+        moving_time = time.gmtime(activity.moving_time)
+        elapsed_time = time.gmtime(activity.elapsed_time)
 
-    def _process_activity_details(self, activity):
-        description = "{0}  \n".format(activity["description"]) if activity["description"] is not None else ""
-        moving_time = time.gmtime(activity["moving_time"])
-        elapsed_time = time.gmtime(activity["elapsed_time"])
-
-        if activity["moving_time"] > 3599:
+        if activity.moving_time > 3599:
             moving_time_output = time.strftime("%H:%M:%S", moving_time)
         else:
             moving_time_output = time.strftime("%M:%S", moving_time)
 
-        if activity["elapsed_time"] > 3599:
+        if activity.elapsed_time > 3599:
             elapsed_time_output = time.strftime("%H:%M:%S", elapsed_time)
         else:
             elapsed_time_output = time.strftime("%M:%S", elapsed_time)
 
         (distance_string, pace_string) = self._process_distance_and_pace(activity)
 
-        avg_speed_kmh = round(activity["average_speed"] * 3.6, 2)
+        avg_speed_kmh = round(activity.average_speed * 3.6, 2)
         avg_speed_mph = round(avg_speed_kmh * 0.6213712, 2)
-        max_speed_kmh = round(activity["max_speed"] * 3.6, 2)
+        max_speed_kmh = round(activity.max_speed * 3.6, 2)
         max_speed_mph = round(max_speed_kmh * 0.6213712, 2)
 
-        activity_details_string = "# {0}  \n".format(activity["name"])
+        activity_details_string = "# {0}  \n".format(activity.name)
         activity_details_string += description
         activity_details_string += "|       |       |       |  \n"
         activity_details_string += "| ----- | ----- | ----- |  \n"
@@ -189,27 +193,27 @@ class ActivityProcessor:
         activity_details_string += "| **Avg. Speed:** | {0} kph | {1} mph |  \n".format(avg_speed_kmh, avg_speed_mph)
         activity_details_string += "| **Max Speed:** | {0} kph | {1} mph |  \n".format(max_speed_kmh, max_speed_mph)
 
-        if activity["has_heartrate"]:
+        if activity.has_heartrate:
             activity_details_string += "| **Heart Rate:** | {0} bpm avg | {1} bpm max |  \n".format(
-                round(activity["average_heartrate"]), round(activity["max_heartrate"]))
+                round(activity.average_heartrate), round(activity.max_heartrate))
 
-        if activity["map"]["polyline"]:
+        if activity.map.polyline:
             activity_details_string += "  \n[{attachment}]"
 
         return activity_details_string
 
-    def _process_comments(self, comments):
+    def _process_comments(self, comments: List[Models.Comment]):
         comment_string = '### Comments\n'
         for c in comments:
-            comment_string += "**{0} {1}** {2}  \n".format(c["athlete"]["firstname"], c["athlete"]["lastname"],
-                                                           c["text"])
+            comment_string += "**{0} {1}** {2}  \n".format(c.commenter_firstname, c.commenter_lastname,
+                                                           c.text)
 
         return comment_string[:len(comment_string) - 2]
 
-    def _process_kudos(self, kudos):
+    def _process_kudos(self, kudos: List[Models.Kudoser]):
         kudos_string = '### Got Kudos From\n'
         for k in kudos:
-            kudos_string += "{0} {1} ".format(k["firstname"], k["lastname"])
+            kudos_string += "{0} {1} ".format(k.firstname, k.lastname)
 
         return kudos_string
 
