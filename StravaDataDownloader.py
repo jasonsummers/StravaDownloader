@@ -1,12 +1,15 @@
+import datetime
 import requests
 import json
 import time
+import csv
 from os.path import exists
 
 class StravaDataDownloader:
 
     def __init__(self):
-        self.base_url = "https://www.strava.com/api/v3/activities"
+        self.activity_base_url = "https://www.strava.com/api/v3/activities"
+        self.athlete_base_url = "https://www.strava.com/api/v3/athlete"
         with open('settings.json') as settings_file:
             self.settings = json.load(settings_file)
 
@@ -54,8 +57,46 @@ class StravaDataDownloader:
 
         exit(1)
 
+    def update_activities_list(self):
+        activities_file_path = "/activities.csv".format(self.settings["data_location"])
+
+        if exists(activities_file_path):
+            lines = open(activities_file_path).readlines()[-1:]  # Assumes the file can fit into memory
+            last_line = [line.split()[0] for line in lines]
+
+        with open(activities_file_path, "w") as activites_file:
+            csv_reader = csv.reader(activites_file, delimiter=',')
+
+    def get_activities(self, before: datetime.date, after: datetime.date):
+        url_format = "{0}/activities?per_page=200".format(self.athlete_base_url)
+
+        if before is not None:
+            url_format += "&before={0}".format(before.strftime('%s'))
+
+        if after is not None:
+            url_format += "&after={0}".format(after.strftime('%s'))
+
+        activities = []
+
+        header = {'Authorization': 'Bearer ' + self.strava_tokens['access_token']}
+
+        page = 1
+        while True:
+            the_url = "{0}&page={1}".format(url_format, page)
+            print(the_url)
+            fetched_activites = self.fetch_from_strava(the_url, header)
+
+            if len(fetched_activites) == 0:
+                break
+
+            activities.append(fetched_activites)
+
+            page = page + 1
+
+        return activities
+
     def get_activity_detail(self, header, activity_id, output_directory):
-        the_url = "{0}/{1}".format(self.base_url, activity_id)
+        the_url = "{0}/{1}".format(self.activity_base_url, activity_id)
         file_path = "{0}{1}_activityDetail.json".format(output_directory, activity_id)
 
         if exists(file_path) and output_directory:
@@ -73,7 +114,7 @@ class StravaDataDownloader:
         return response
 
     def get_activity_comments(self, header, activity_id, output_directory):
-        the_url = "{0}/{1}/comments".format(self.base_url, activity_id)
+        the_url = "{0}/{1}/comments".format(self.activity_base_url, activity_id)
         file_path = "{0}{1}_activityComments.json".format(output_directory, activity_id)
 
         if exists(file_path) and output_directory:
@@ -90,7 +131,7 @@ class StravaDataDownloader:
         return response
 
     def get_activity_kudos(self, header, activity_id, output_directory):
-        the_url = "{0}/{1}/kudos".format(self.base_url, activity_id)
+        the_url = "{0}/{1}/kudos".format(self.activity_base_url, activity_id)
         file_path = "{0}{1}_activityKudos.json".format(output_directory, activity_id)
 
         if exists(file_path) and output_directory:
