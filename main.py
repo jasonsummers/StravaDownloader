@@ -5,7 +5,7 @@ import requests
 import urllib3
 from os.path import exists
 
-import Models
+from Entities import Activity, Comment, Kudoser
 import polylinetoimg
 import ActivityProcessor
 import StravaDataDownloader
@@ -71,7 +71,7 @@ def process_activities(activity_ids, settings, output_format, journal_name):
         if exists(activity_json_file):
             with open(activity_json_file, "r") as activity_json:
                 activity_details_json = json.loads(activity_json.read())
-                activity_details = Models.Activity.from_dict(activity_details_json)
+                activity_details = Activity.Activity.from_dict(activity_details_json)
             if activity_details.distance < 0.1:
                 continue
         else:
@@ -83,7 +83,7 @@ def process_activities(activity_ids, settings, output_format, journal_name):
         if settings["include_strava_kudos"] and exists(activity_kudos_file) and activity_details.kudos_count > 0:
             with open(activity_kudos_file, "r") as kudos_json:
                 kudos_dict = json.loads(kudos_json.read())
-                kudos = Models.Kudoser.list_from_dict_array(kudos_dict)
+                kudos = Kudoser.Kudoser.list_from_dict_array(kudos_dict)
         else:
             kudos = None
 
@@ -93,7 +93,7 @@ def process_activities(activity_ids, settings, output_format, journal_name):
                 and activity_details.comment_count > 0:
             with open(activity_comments_file, "r") as comments_json:
                 comments_dict = json.loads(comments_json.read())
-                comments = Models.Comment.list_from_dict_array(comments_dict)
+                comments = Comment.Comment.list_from_dict_array(comments_dict)
         else:
             comments = None
 
