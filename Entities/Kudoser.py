@@ -1,12 +1,19 @@
 from typing import Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from sqlalchemy import Column, Integer, String, ForeignKey
+from Entities import Base
 
 
+@Base.Registry.mapped
 @dataclass
 class Kudoser:
-    activity_id: int
-    firstname: str
-    lastname: str
+    __tablename__ = "kudosers"
+    __sa_dataclass_metadata_key__ = "sa"
+
+    id: int = field(init=False, metadata={"sa": Column(Integer, primary_key=True)})
+    activity_id: int = field(metadata={"sa": Column(Integer, ForeignKey("activities.id"))})
+    firstname: str = field(metadata={"sa": Column(String(50))})
+    lastname: str = field(metadata={"sa": Column(String(50))})
 
     @staticmethod
     def from_dict(obj: Any) -> 'Kudoser':

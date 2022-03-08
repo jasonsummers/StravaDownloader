@@ -1,14 +1,20 @@
 from typing import Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from Entities import Base
 
-
+@Base.Registry.mapped
 @dataclass
 class HighlightedKudoser:
-    activity_id: int
-    destination_url: str
-    display_name: str
-    avatar_url: str
-    show_name: bool
+    __tablename__ = "highlighted_kudoser"
+    __sa_dataclass_metadata_key__ = "sa"
+
+    id: int = field(init=False, metadata={"sa": Column(Integer, primary_key=True)})
+    activity_id: int = field(metadata={"sa": Column(Integer, ForeignKey("activities.id"))})
+    destination_url: str = field(metadata={"sa": Column(String(250))})
+    display_name: str = field(metadata={"sa": Column(String(250))})
+    avatar_url: str = field(metadata={"sa": Column(String(250))})
+    show_name: bool = field(metadata={"sa": Column(Boolean)})
 
     @staticmethod
     def from_dict(obj: Any) -> 'HighlightedKudoser':

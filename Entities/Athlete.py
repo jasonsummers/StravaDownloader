@@ -1,49 +1,54 @@
 from typing import List
 from typing import Any
-from dataclasses import dataclass
-from Entities import Club, Gear
+from dataclasses import dataclass, field
+from sqlalchemy import Column, Integer, Float, String, Boolean
+from sqlalchemy.orm import relationship
+from Entities import Gear, Base
 
 
+@Base.Registry.mapped
 @dataclass
 class Athlete:
-    id: int
-    username: str
-    resource_state: int
-    firstname: str
-    lastname: str
-    bio: str
-    city: str
-    state: str
-    country: str
-    sex: str
-    premium: bool
-    summit: bool
-    created_at: str
-    updated_at: str
-    badge_type_id: int
-    weight: float
-    profile_medium: str
-    profile: str
-    friend: bool
-    follower: bool
-    blocked: bool
-    can_follow: bool
-    follower_count: int
-    friend_count: int
-    mutual_friend_count: int
-    athlete_type: int
-    date_preference: str
-    measurement_preference: str
-    clubs: List[Club]
-    ftp: str
-    bikes: List[Gear]
-    shoes: List[Gear]
+    __tablename__ = "athletes"
+    __sa_dataclass_metadata_key__ = "sa"
+
+    id: int = field(metadata={"sa": Column(Integer, primary_key=True)})
+    username: str = field(metadata={"sa": Column(String(50))})
+    firstname: str = field(metadata={"sa": Column(String(50))})
+    lastname: str = field(metadata={"sa": Column(String(50))})
+    bio: str = field(metadata={"sa": Column(String(500))})
+    city: str = field(metadata={"sa": Column(String(50))})
+    state: str = field(metadata={"sa": Column(String(50))})
+    country: str = field(metadata={"sa": Column(String(50))})
+    sex: str = field(metadata={"sa": Column(String(10))})
+    premium: bool = field(metadata={"sa": Column(Boolean)})
+    summit: bool = field(metadata={"sa": Column(Boolean)})
+    created_at: str = field(metadata={"sa": Column(String(50))})
+    updated_at: str = field(metadata={"sa": Column(String(50))})
+    badge_type_id: int = field(metadata={"sa": Column(Integer)})
+    weight: float = field(metadata={"sa": Column(Float)})
+    profile_medium: str = field(metadata={"sa": Column(String(50))})
+    profile: str = field(metadata={"sa": Column(String(500))})
+    friend: bool = field(metadata={"sa": Column(Boolean)})
+    follower: bool = field(metadata={"sa": Column(Boolean)})
+    blocked: bool = field(metadata={"sa": Column(Boolean)})
+    can_follow: bool = field(metadata={"sa": Column(Boolean)})
+    follower_count: int = field(metadata={"sa": Column(Integer)})
+    friend_count: int = field(metadata={"sa": Column(Integer)})
+    mutual_friend_count: int = field(metadata={"sa": Column(Integer)})
+    athlete_type: int = field(metadata={"sa": Column(Integer)})
+    date_preference: str = field(metadata={"sa": Column(String(50))})
+    measurement_preference: str = field(metadata={"sa": Column(String(50))})
+    ftp: str = field(metadata={"sa": Column(String(50))})
+    bikes: List[Gear.Gear] = field(default_factory=list, metadata={
+        "sa": relationship("Gear", primaryjoin="and_(Athlete.id==Gear.athlete_id, Gear.gear_type=='bike'")})
+    shoes: List[Gear.Gear] = field(default_factory=list, metadata={
+        "sa": relationship("Gear", primaryjoin="and_(Athlete.id==Gear.athlete_id, Gear.gear_type=='shoe'")})
 
     @staticmethod
     def from_dict(obj: Any) -> 'Athlete':
         _id = int(obj.get("id"))
         _username = str(obj.get("username"))
-        _resource_state = int(obj.get("resource_state"))
         _firstname = str(obj.get("firstname"))
         _lastname = str(obj.get("lastname"))
         _bio = str(obj.get("bio"))
@@ -69,11 +74,10 @@ class Athlete:
         _athlete_type = int(obj.get("athlete_type"))
         _date_preference = str(obj.get("date_preference"))
         _measurement_preference = str(obj.get("measurement_preference"))
-        _clubs = [Club.from_dict(y) for y in obj.get("clubs")]
         _ftp = str(obj.get("ftp"))
-        _bikes = [Gear.from_athlete_dict(y) for y in obj.get("bikes")]
-        _shoes = [Gear.from_athlete_dict(y) for y in obj.get("shoes")]
-        return Athlete(_id, _username, _resource_state, _firstname, _lastname, _bio, _city, _state, _country, _sex,
+        _bikes = [Gear.from_athlete_dict(y, "bike") for y in obj.get("bikes")]
+        _shoes = [Gear.from_athlete_dict(y, "shoe") for y in obj.get("shoes")]
+        return Athlete(_id, _username, _firstname, _lastname, _bio, _city, _state, _country, _sex,
                        _premium, _summit, _created_at, _updated_at, _badge_type_id, _weight, _profile_medium, _profile,
                        _friend, _follower, _blocked, _can_follow, _follower_count, _friend_count, _mutual_friend_count,
-                       _athlete_type, _date_preference, _measurement_preference, _clubs, _ftp, _bikes, _shoes)
+                       _athlete_type, _date_preference, _measurement_preference, _ftp, _bikes, _shoes)

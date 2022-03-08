@@ -1,14 +1,20 @@
 from typing import Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from sqlalchemy import Column, Integer, Float, String, Boolean, ForeignKey
+from Entities import Base
 
-
+@Base.Registry.mapped
 @dataclass
 class Comment:
-    activity_id: int
-    commenter_firstname: str
-    commenter_lastname: str
-    text: str
-    created_at: str
+    __tablename__ = "comments"
+    __sa_dataclass_metadata_key__ = "sa"
+
+    id: int = field(init=False, metadata={"sa": Column(Integer, primary_key=True)})
+    activity_id: int = field(metadata={"sa": Column(Integer, ForeignKey("activities.id"))})
+    commenter_firstname: str = field(metadata={"sa": Column(String(50))})
+    commenter_lastname: str = field(metadata={"sa": Column(String(50))})
+    text: str = field(metadata={"sa": Column(String(250))})
+    created_at: str = field(metadata={"sa": Column(String(50))})
 
     @staticmethod
     def from_dict(obj: Any) -> 'Comment':

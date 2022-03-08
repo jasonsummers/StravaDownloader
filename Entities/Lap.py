@@ -1,36 +1,40 @@
 from typing import Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from sqlalchemy import Column, Integer, Float, String, Boolean, ForeignKey
+from Entities import Base
 
 
+@Base.Registry.mapped
 @dataclass
 class Lap:
-    id: float
-    resource_state: int
-    name: str
-    activity_id: int
-    athlete_id: int
-    elapsed_time: int
-    moving_time: int
-    start_date: str
-    start_date_local: str
-    distance: float
-    start_index: int
-    end_index: int
-    total_elevation_gain: int
-    average_speed: float
-    max_speed: float
-    average_cadence: float
-    device_watts: bool
-    average_watts: float
-    lap_index: int
-    split: int
-    average_heartrate: float
-    max_heartrate: float
+    __tablename__ = "laps"
+    __sa_dataclass_metadata_key__ = "sa"
+
+    id: int = field(metadata={"sa": Column(Integer, primary_key=True)})
+    name: str = field(metadata={"sa": Column(String(50))})
+    activity_id: int = field(metadata={"sa": Column(Integer, ForeignKey("activities.id"))})
+    athlete_id: int = field(metadata={"sa": Column(Integer)})
+    elapsed_time: int = field(metadata={"sa": Column(Integer)})
+    moving_time: int = field(metadata={"sa": Column(Integer)})
+    start_date: str = field(metadata={"sa": Column(String(50))})
+    start_date_local: str = field(metadata={"sa": Column(String(50))})
+    distance: float = field(metadata={"sa": Column(Float)})
+    start_index: int = field(metadata={"sa": Column(Integer)})
+    end_index: int = field(metadata={"sa": Column(Integer)})
+    total_elevation_gain: int = field(metadata={"sa": Column(Integer)})
+    average_speed: float = field(metadata={"sa": Column(Float)})
+    max_speed: float = field(metadata={"sa": Column(Float)})
+    average_cadence: float = field(metadata={"sa": Column(Float)})
+    device_watts: bool = field(metadata={"sa": Column(Boolean)})
+    average_watts: float = field(metadata={"sa": Column(Float)})
+    lap_index: int = field(metadata={"sa": Column(Integer)})
+    split: int = field(metadata={"sa": Column(Integer)})
+    average_heartrate: float = field(metadata={"sa": Column(Float)})
+    max_heartrate: float = field(metadata={"sa": Column(Float)})
 
     @staticmethod
     def from_dict(obj: Any) -> 'Lap':
-        _id = float(obj.get("id"))
-        _resource_state = int(obj.get("resource_state"))
+        _id = int(obj.get("id"))
         _name = str(obj.get("name"))
         _activity_id = int(obj.get("activity")["id"])
         _athlete_id = int(obj.get("athlete")["id"])
@@ -51,7 +55,7 @@ class Lap:
         _split = int(obj.get("split"))
         _average_heartrate = float(obj.get("average_heartrate"))
         _max_heartrate = float(obj.get("max_heartrate"))
-        return Lap(_id, _resource_state, _name, _activity_id, _athlete_id, _elapsed_time, _moving_time, _start_date,
+        return Lap(_id, _name, _activity_id, _athlete_id, _elapsed_time, _moving_time, _start_date,
                    _start_date_local, _distance, _start_index, _end_index, _total_elevation_gain, _average_speed,
                    _max_speed, _average_cadence, _device_watts, _average_watts, _lap_index, _split, _average_heartrate,
                    _max_heartrate)

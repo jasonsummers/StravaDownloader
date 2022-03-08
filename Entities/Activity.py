@@ -1,10 +1,9 @@
-from __future__ import annotations
 from typing import List
 from typing import Any
 from dataclasses import dataclass, field
 from sqlalchemy import Column, Integer, Float, String, Boolean
 from sqlalchemy.orm import relationship
-from Entities import Gear, HighlightedKudoser, Lap, Map, Photos, SegmentEffort, Split, Base
+from Entities import Gear, HighlightedKudoser, Lap, Map, Photos, SegmentEffort, Split, Base, Kudoser, Comment
 
 
 @Base.Registry.mapped
@@ -36,7 +35,7 @@ class Activity:
     comment_count: int = field(metadata={"sa": Column(Integer)})
     athlete_count: int = field(metadata={"sa": Column(Integer)})
     photo_count: int = field(metadata={"sa": Column(Integer)})
-    map: Map = field(metadata={"sa": relationship("Map")})
+    map: Map = field(metadata={"sa": relationship("Map", uselist=False)})
     trainer: bool = field(metadata={"sa": Column(Boolean)})
     commute: bool = field(metadata={"sa": Column(Boolean)})
     manual: bool = field(metadata={"sa": Column(Boolean)})
@@ -63,7 +62,8 @@ class Activity:
     suffer_score: str = field(metadata={"sa": Column(String(25))})
     description: str = field(metadata={"sa": Column(String(25))})
     calories: float = field(metadata={"sa": Column(Float)})
-    gear: Gear = field(metadata={"sa": relationship("Gear")})
+    gear: Gear = field(metadata={"sa": relationship("Gear", primaryjoin="and_(Activity.gear_id==Gear.id",
+                                                    uselist=False)})
     partner_brand_tag: str = field(metadata={"sa": Column(String(50))})
     photos: Photos = field(metadata={"sa": relationship("Photos")})
     hide_from_home: bool = field(metadata={"sa": Column(Boolean)})
@@ -73,13 +73,17 @@ class Activity:
     leaderboard_opt_out: bool = field(metadata={"sa": Column(Boolean)})
     average_heartrate: float = field(metadata={"sa": Column(Float)})
     max_heartrate: float = field(metadata={"sa": Column(Float)})
-    segment_efforts: List[SegmentEffort] = field(default_factory=list,
+    segment_efforts: List[SegmentEffort.SegmentEffort] = field(default_factory=list,
                                                  metadata={"sa": relationship("SegmentEffort")})
-    splits_metric: List[Split] = field(default_factory=list, metadata={"sa": relationship("Split")})
-    splits_standard: List[Split] = field(default_factory=list, metadata={"sa": relationship("Split")})
-    laps: List[Lap] = field(default_factory=list, metadata={"sa": relationship("Lap")})
-    highlighted_kudosers: List[HighlightedKudoser] = field(default_factory=list,
+    splits_metric: List[Split.Split] = field(default_factory=list, metadata={
+        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==True")})
+    splits_standard: List[Split.Split] = field(default_factory=list, metadata={
+        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==False")})
+    laps: List[Lap.Lap] = field(default_factory=list, metadata={"sa": relationship("Lap")})
+    highlighted_kudosers: List[HighlightedKudoser.HighlightedKudoser] = field(default_factory=list,
                                                            metadata={"sa": relationship("HighlightedKudoser")})
+    kudos: List[Kudoser.Kudoser] = field(default_factory=list, metadata={"sa": relationship("Kudoser")})
+    comments: List[Comment.Comment] = field(default_factory=list, metadata={"sa": relationship("Comment")})
 
     @staticmethod
     def from_dict(obj: Any) -> 'Activity':
@@ -158,4 +162,5 @@ class Activity:
                         _elev_low, _pr_count, _total_photo_count, _has_kudoed, _workout_type, _suffer_score,
                         _description, _calories, _gear, _partner_brand_tag, _photos, _hide_from_home, _device_name,
                         _embed_token, _segment_leaderboard_opt_out, _leaderboard_opt_out, _average_heartrate,
-                        _max_heartrate, _segment_efforts, _splits_metric, _splits_standard, _laps,_highlighted_kudosers)
+                        _max_heartrate, _segment_efforts, _splits_metric, _splits_standard, _laps,
+                        _highlighted_kudosers)
