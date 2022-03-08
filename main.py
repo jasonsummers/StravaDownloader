@@ -135,6 +135,25 @@ def process_activities(activity_ids, settings, output_format, journal_name):
             continue
 
 
+def update():
+    with open('settings.json') as settings_file:
+        settings = json.load(settings_file)
+    activity_ids = get_activity_ids(settings["strava_activities_file"])
+
+    import requests
+    header = {'Authorization': 'Bearer ***REMOVED***'}
+    for aid in activity_ids:
+        print('ActivityId: ' + aid)
+        response = requests.put(
+            url='https://www.strava.com/api/v3/activities/' + aid,
+            headers=header,
+            data={
+                'gear_id': 'g10247939'
+            }
+        )
+        print(response.json())
+
+
 def main(arg):
     with open('settings.json') as settings_file:
         settings = json.load(settings_file)
@@ -185,7 +204,9 @@ def main(arg):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+
+    update()
+    #main(sys.argv[1:])
 
     #strava = StravaDataDownloader.StravaDataDownloader()
     #before = None

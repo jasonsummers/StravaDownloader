@@ -1,1 +1,4 @@
 .idea
+*.sqlite
+settings.json
+strava_tokens.json
