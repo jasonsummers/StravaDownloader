@@ -34,10 +34,10 @@ class Athlete:
     athlete_type: int
     date_preference: str
     measurement_preference: str
-    clubs: List[Club.Club]
+    clubs: List[Club]
     ftp: str
-    bikes: List[Bike.Bike]
-    shoes: List[Shoe.Shoe]
+    bikes: List[Gear]
+    shoes: List[Gear]
 
     @staticmethod
     def from_dict(obj: Any) -> 'Athlete':
@@ -69,10 +69,10 @@ class Athlete:
         _athlete_type = int(obj.get("athlete_type"))
         _date_preference = str(obj.get("date_preference"))
         _measurement_preference = str(obj.get("measurement_preference"))
-        _clubs = [Club.Club.from_dict(y) for y in obj.get("clubs")]
+        _clubs = [Club.from_dict(y) for y in obj.get("clubs")]
         _ftp = str(obj.get("ftp"))
-        _bikes = [Gear.Gear.from_athlete_dict(y) for y in obj.get("bikes")]
-        _shoes = [Gear.Gear.from_athlete_dict(y) for y in obj.get("shoes")]
+        _bikes = [Gear.from_athlete_dict(y) for y in obj.get("bikes")]
+        _shoes = [Gear.from_athlete_dict(y) for y in obj.get("shoes")]
         return Athlete(_id, _username, _resource_state, _firstname, _lastname, _bio, _city, _state, _country, _sex,
                        _premium, _summit, _created_at, _updated_at, _badge_type_id, _weight, _profile_medium, _profile,
                        _friend, _follower, _blocked, _can_follow, _follower_count, _friend_count, _mutual_friend_count,

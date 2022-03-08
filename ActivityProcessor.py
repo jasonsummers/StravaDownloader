@@ -5,13 +5,13 @@ from typing import List
 
 class ActivityProcessor:
 
-    def __init__(self, activity: Activity.Activity, kudos, comments):
+    def __init__(self, activity: Activity, kudos, comments):
         self.activity = activity
         self.kudos = kudos
         self.comments = comments
 
     @staticmethod
-    def _process_segment(segment: SegmentEffort.SegmentEffort, detailed: bool):
+    def _process_segment(segment: SegmentEffort, detailed: bool):
         if segment.pr_rank == 1:
             pr_suffix = "\U0001F947"
         elif segment.pr_rank == 2:
@@ -49,7 +49,7 @@ class ActivityProcessor:
                                     segment_pace_mi_time_output, round(segment.average_heartrate),
                                     round(segment.max_heartrate))
 
-    def _process_segments(self, activity: Activity.Activity, detailed: bool):
+    def _process_segments(self, activity: Activity, detailed: bool):
         segments_string = "### Segments  \n"
 
         if len(activity.segment_efforts) == 0:
@@ -65,7 +65,7 @@ class ActivityProcessor:
         return segments_string
 
     @staticmethod
-    def _process_split(split: Split.Split, metric: bool):
+    def _process_split(split: Split, metric: bool):
         moving_time = time.gmtime(split.moving_time)
 
         if split.moving_time > 3599:
@@ -85,7 +85,7 @@ class ActivityProcessor:
         return "| {0} | {1} | {2} {3} | {4} bpm |  \n".format(split.split, moving_time_output, speed,
                                                               speed_suffix, round(split.average_heartrate))
 
-    def _process_splits(self, activity: Activity.Activity, metric: bool):
+    def _process_splits(self, activity: Activity, metric: bool):
         splits_string = ""
 
         if metric:
@@ -109,7 +109,7 @@ class ActivityProcessor:
         return splits_string
 
     @staticmethod
-    def _process_laps(activity: Activity.Activity):
+    def _process_laps(activity: Activity):
         laps_string = "### Laps  \n"
 
         if len(activity.laps) < 2:
@@ -133,7 +133,7 @@ class ActivityProcessor:
         return laps_string
 
     @staticmethod
-    def _process_distance_and_pace(activity: Activity.Activity):
+    def _process_distance_and_pace(activity: Activity):
         if activity.type == "Swim":
             distance_metric = round(activity.distance)
             distance_imper = round(activity.distance * 1.093613)
@@ -202,7 +202,7 @@ class ActivityProcessor:
 
         return activity_details_string
 
-    def _process_comments(self, comments: List[Comment.Comment]):
+    def _process_comments(self, comments: List[Comment]):
         comment_string = '### Comments\n'
         for c in comments:
             comment_string += "**{0} {1}** {2}  \n".format(c.commenter_firstname, c.commenter_lastname,
@@ -210,7 +210,7 @@ class ActivityProcessor:
 
         return comment_string[:len(comment_string) - 2]
 
-    def _process_kudos(self, kudos: List[Kudoser.Kudoser]):
+    def _process_kudos(self, kudos: List[Kudoser]):
         kudos_string = '### Got Kudos From\n'
         for k in kudos:
             kudos_string += "{0} {1} ".format(k.firstname, k.lastname)
