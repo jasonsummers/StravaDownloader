@@ -13,29 +13,44 @@ class StravaDataDownloader:
         with open('settings.json') as settings_file:
             self.settings = json.load(settings_file)
 
-        # Get the tokens from file to connect to Strava
+        if not exists('strava_tokens.json'):
+            tokenUrl = "http://www.strava.com/oauth/authorize?client_id=" + str(self.settings["strava_client_id"]) + \
+                       "&response_type=code&redirect_uri=http://localhost/exchange_token&approval_prompt=force&" + \
+                       "scope=read,activity:read_all,activity:write,profile:read_all"
+            print(tokenUrl)
+            self.get_strava_tokens(False)
+            return
+
         with open('strava_tokens.json') as json_file:
             self.strava_tokens = json.load(json_file)
-        # If access_token has expired then
-        # use the refresh_token to get the new access_token
+
         if self.strava_tokens['expires_at'] < time.time():
-            # Make Strava auth API call with current refresh token
-            response = requests.post(
-                url='https://www.strava.com/oauth/token',
-                data={
-                    'client_id': self.settings['strava_client_id'],
-                    'client_secret': self.settings['strava_client_secret'],
-                    'grant_type': 'refresh_token',
-                    'refresh_token': self.strava_tokens['refresh_token']
-                }
-            )
-            # Save response as json in new variable
-            new_strava_tokens = response.json()
-            # Save new tokens to file
-            with open('strava_tokens.json', 'w') as outfile:
-                json.dump(new_strava_tokens, outfile)
-            # Use new Strava tokens from now
-            self.strava_tokens = new_strava_tokens
+            self.get_strava_tokens(True)
+
+    def get_strava_tokens(self, refresh: bool):
+        post_data = {
+            'client_id': self.settings['strava_client_id'],
+            'client_secret': self.settings['strava_client_secret']
+        }
+
+        if refresh:
+            post_data['grant_type'] = 'refresh_token'
+            post_data['refresh_token'] = self.strava_tokens['refresh_token']
+        else:
+            code = input("Paste Code Here:")
+            post_data['grant_type'] = 'authorization_code'
+            post_data['code'] = code
+
+        response = requests.post(
+            url='https://www.strava.com/oauth/token',
+            data=post_data
+        )
+
+        new_strava_tokens = response.json()
+        with open('strava_tokens.json', 'w') as outfile:
+            json.dump(new_strava_tokens, outfile)
+
+        self.strava_tokens = new_strava_tokens
 
     def get_token(self):
         return self.strava_tokens['access_token']

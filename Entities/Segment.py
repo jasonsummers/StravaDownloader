@@ -1,6 +1,6 @@
 from typing import Any
 from dataclasses import dataclass, field
-from sqlalchemy import Column, Integer, Float, String, Boolean
+from sqlalchemy import Column, Integer, Float, String, Boolean, ForeignKey
 from Entities import Base
 
 
@@ -10,7 +10,7 @@ class Segment:
     __tablename__ = "segments"
     __sa_dataclass_metadata_key__ = "sa"
 
-    id: int = field(metadata={"sa": Column(Integer, primary_key=True)})
+    id: int = field(metadata={"sa": Column(Integer, ForeignKey("segment_efforts.segment_id"), primary_key=True)})
     name: str = field(metadata={"sa": Column(String(50))})
     activity_type: str = field(metadata={"sa": Column(String(10))})
     distance: float = field(metadata={"sa": Column(Float)})

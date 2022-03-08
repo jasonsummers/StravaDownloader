@@ -5,7 +5,7 @@ import requests
 import urllib3
 from os.path import exists
 
-from Entities import Activity, Comment, Kudoser
+from Entities import Activity, Comment, Kudoser, Athlete
 import polylinetoimg
 import ActivityProcessor
 import StravaDataDownloader
@@ -154,6 +154,74 @@ def update():
         print(response.json())
 
 
+def load_athlete():
+    with open("/Users/Jason/Desktop/athlete.json") as athlete_file:
+        athlete_json = json.load(athlete_file)
+
+    new_athlete = Athlete.from_dict(athlete_json)
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine('sqlite:///strava.sqlite')
+    Session = sessionmaker(engine)
+
+    with Session() as session:
+        session.add(new_athlete)
+        session.commit()
+
+def load_activities():
+    with open('settings.json') as settings_file:
+        settings = json.load(settings_file)
+    activity_ids = get_activity_ids(settings["strava_activities_file"])
+    source_dir = settings["data_location"]
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    for a in activity_ids:
+        activity_json_file = source_dir + a + "_activityDetail.json"
+
+        if exists(activity_json_file):
+            with open(activity_json_file, "r") as activity_json:
+                activity_details_json = json.loads(activity_json.read())
+                activity_details = Activity.from_dict(activity_details_json)
+            if activity_details.distance < 0.1:
+                continue
+        else:
+            # We have no details for the activity ID so skip it
+            continue
+
+        activity_kudos_file = source_dir + a + "_activityKudos.json"
+
+        if settings["include_strava_kudos"] and exists(activity_kudos_file) and activity_details.kudos_count > 0:
+            with open(activity_kudos_file, "r") as kudos_json:
+                kudos_dict = json.loads(kudos_json.read())
+                kudos = Kudoser.list_from_dict_array(kudos_dict)
+        else:
+            kudos = None
+
+        activity_comments_file = source_dir + a + "_activityComments.json"
+
+        if settings["include_strava_comments"] and exists(activity_comments_file) \
+                and activity_details.comment_count > 0:
+            with open(activity_comments_file, "r") as comments_json:
+                comments_dict = json.loads(comments_json.read())
+                comments = Comment.list_from_dict_array(comments_dict)
+        else:
+            comments = None
+
+        activity_details.kudos = kudos
+        activity_details.comments = comments
+
+        engine = create_engine('sqlite:///strava.sqlite')
+        Session = sessionmaker(engine)
+
+        with Session() as session:
+            session.add(activity_details)
+            session.commit()
+
+
 def main(arg):
     with open('settings.json') as settings_file:
         settings = json.load(settings_file)
@@ -205,8 +273,11 @@ def main(arg):
 
 if __name__ == '__main__':
 
-    update()
+    #update()
+    #load_athlete()
+    load_activities()
     #main(sys.argv[1:])
+    #setup()
 
     #strava = StravaDataDownloader.StravaDataDownloader()
     #before = None

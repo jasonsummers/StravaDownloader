@@ -1,8 +1,8 @@
 """Initial Schema Creation
 
-Revision ID: c4b000061986
+Revision ID: 6a4ef00bcea0
 Revises: 
-Create Date: 2022-03-08 14:21:17.309211
+Create Date: 2022-03-08 16:05:39.639589
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c4b000061986'
+revision = '6a4ef00bcea0'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -109,40 +109,6 @@ def upgrade():
     sa.Column('ftp', sa.String(length=50), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('gear',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('athlete_id', sa.Integer(), nullable=True),
-    sa.Column('primary', sa.Boolean(), nullable=True),
-    sa.Column('gear_type', sa.String(length=4), nullable=True),
-    sa.Column('name', sa.String(length=50), nullable=True),
-    sa.Column('nickname', sa.String(length=50), nullable=True),
-    sa.Column('retired', sa.Boolean(), nullable=True),
-    sa.Column('distance', sa.Integer(), nullable=True),
-    sa.Column('converted_distance', sa.Float(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('segments',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=50), nullable=True),
-    sa.Column('activity_type', sa.String(length=10), nullable=True),
-    sa.Column('distance', sa.Float(), nullable=True),
-    sa.Column('average_grade', sa.Float(), nullable=True),
-    sa.Column('maximum_grade', sa.Float(), nullable=True),
-    sa.Column('elevation_high', sa.Float(), nullable=True),
-    sa.Column('elevation_low', sa.Float(), nullable=True),
-    sa.Column('start_lat', sa.Float(), nullable=True),
-    sa.Column('start_lng', sa.Float(), nullable=True),
-    sa.Column('end_lat', sa.Float(), nullable=True),
-    sa.Column('end_lng', sa.Float(), nullable=True),
-    sa.Column('climb_category', sa.Integer(), nullable=True),
-    sa.Column('city', sa.String(length=50), nullable=True),
-    sa.Column('state', sa.String(length=50), nullable=True),
-    sa.Column('country', sa.String(length=50), nullable=True),
-    sa.Column('private', sa.Boolean(), nullable=True),
-    sa.Column('hazardous', sa.Boolean(), nullable=True),
-    sa.Column('starred', sa.Boolean(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
     op.create_table('comments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('activity_id', sa.Integer(), nullable=True),
@@ -151,6 +117,20 @@ def upgrade():
     sa.Column('text', sa.String(length=250), nullable=True),
     sa.Column('created_at', sa.String(length=50), nullable=True),
     sa.ForeignKeyConstraint(['activity_id'], ['activities.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('gear',
+    sa.Column('id', sa.String(length=25), nullable=False),
+    sa.Column('athlete_id', sa.Integer(), nullable=True),
+    sa.Column('primary', sa.Boolean(), nullable=True),
+    sa.Column('gear_type', sa.String(length=4), nullable=True),
+    sa.Column('name', sa.String(length=50), nullable=True),
+    sa.Column('nickname', sa.String(length=50), nullable=True),
+    sa.Column('retired', sa.Boolean(), nullable=True),
+    sa.Column('distance', sa.Integer(), nullable=True),
+    sa.Column('converted_distance', sa.Float(), nullable=True),
+    sa.ForeignKeyConstraint(['athlete_id'], ['athletes.id'], ),
+    sa.ForeignKeyConstraint(['id'], ['activities.gear_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('highlighted_kudoser',
@@ -261,11 +241,35 @@ def upgrade():
     sa.ForeignKeyConstraint(['photos_id'], ['photos.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('segments',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=True),
+    sa.Column('activity_type', sa.String(length=10), nullable=True),
+    sa.Column('distance', sa.Float(), nullable=True),
+    sa.Column('average_grade', sa.Float(), nullable=True),
+    sa.Column('maximum_grade', sa.Float(), nullable=True),
+    sa.Column('elevation_high', sa.Float(), nullable=True),
+    sa.Column('elevation_low', sa.Float(), nullable=True),
+    sa.Column('start_lat', sa.Float(), nullable=True),
+    sa.Column('start_lng', sa.Float(), nullable=True),
+    sa.Column('end_lat', sa.Float(), nullable=True),
+    sa.Column('end_lng', sa.Float(), nullable=True),
+    sa.Column('climb_category', sa.Integer(), nullable=True),
+    sa.Column('city', sa.String(length=50), nullable=True),
+    sa.Column('state', sa.String(length=50), nullable=True),
+    sa.Column('country', sa.String(length=50), nullable=True),
+    sa.Column('private', sa.Boolean(), nullable=True),
+    sa.Column('hazardous', sa.Boolean(), nullable=True),
+    sa.Column('starred', sa.Boolean(), nullable=True),
+    sa.ForeignKeyConstraint(['id'], ['segment_efforts.segment_id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('segments')
     op.drop_table('primary_photo')
     op.drop_table('splits')
     op.drop_table('segment_efforts')
@@ -274,9 +278,8 @@ def downgrade():
     op.drop_table('laps')
     op.drop_table('kudosers')
     op.drop_table('highlighted_kudoser')
-    op.drop_table('comments')
-    op.drop_table('segments')
     op.drop_table('gear')
+    op.drop_table('comments')
     op.drop_table('athletes')
     op.drop_table('activities')
     # ### end Alembic commands ###

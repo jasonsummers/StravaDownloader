@@ -11,7 +11,7 @@ class Map:
     __sa_dataclass_metadata_key__ = "sa"
 
     id: str = field(metadata={"sa": Column(String(25), primary_key=True)})
-    activity_id: int = field(metadata={"sa": Column(Integer, ForeignKey('activities.id'))})
+    activity_id: int = field(init=False, metadata={"sa": Column(Integer, ForeignKey('activities.id'))})
     polyline: str = field(metadata={"sa": Column(Text)})
     summary_polyline: str = field(metadata={"sa": Column(Text)})
 

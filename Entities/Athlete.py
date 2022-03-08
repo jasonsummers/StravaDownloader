@@ -41,9 +41,10 @@ class Athlete:
     measurement_preference: str = field(metadata={"sa": Column(String(50))})
     ftp: str = field(metadata={"sa": Column(String(50))})
     bikes: List[Gear.Gear] = field(default_factory=list, metadata={
-        "sa": relationship("Gear", primaryjoin="and_(Athlete.id==Gear.athlete_id, Gear.gear_type=='bike'")})
+        "sa": relationship("Gear", primaryjoin="and_(Athlete.id==Gear.athlete_id, Gear.gear_type=='bike')")})
     shoes: List[Gear.Gear] = field(default_factory=list, metadata={
-        "sa": relationship("Gear", primaryjoin="and_(Athlete.id==Gear.athlete_id, Gear.gear_type=='shoe'")})
+        "sa": relationship("Gear", primaryjoin="and_(Athlete.id==Gear.athlete_id, Gear.gear_type=='shoe')",
+                           overlaps="bikes")})
 
     @staticmethod
     def from_dict(obj: Any) -> 'Athlete':
@@ -75,8 +76,8 @@ class Athlete:
         _date_preference = str(obj.get("date_preference"))
         _measurement_preference = str(obj.get("measurement_preference"))
         _ftp = str(obj.get("ftp"))
-        _bikes = [Gear.from_athlete_dict(y, "bike") for y in obj.get("bikes")]
-        _shoes = [Gear.from_athlete_dict(y, "shoe") for y in obj.get("shoes")]
+        _bikes = [Gear.Gear.from_athlete_dict(y, "bike") for y in obj.get("bikes")]
+        _shoes = [Gear.Gear.from_athlete_dict(y, "shoe") for y in obj.get("shoes")]
         return Athlete(_id, _username, _firstname, _lastname, _bio, _city, _state, _country, _sex,
                        _premium, _summit, _created_at, _updated_at, _badge_type_id, _weight, _profile_medium, _profile,
                        _friend, _follower, _blocked, _can_follow, _follower_count, _friend_count, _mutual_friend_count,

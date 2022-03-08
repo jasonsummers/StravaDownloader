@@ -62,7 +62,7 @@ class Activity:
     suffer_score: str = field(metadata={"sa": Column(String(25))})
     description: str = field(metadata={"sa": Column(String(25))})
     calories: float = field(metadata={"sa": Column(Float)})
-    gear: Gear = field(metadata={"sa": relationship("Gear", primaryjoin="and_(Activity.gear_id==Gear.id",
+    gear: Gear = field(metadata={"sa": relationship("Gear", primaryjoin="and_(Activity.gear_id==Gear.id)",
                                                     uselist=False)})
     partner_brand_tag: str = field(metadata={"sa": Column(String(50))})
     photos: Photos = field(metadata={"sa": relationship("Photos")})
@@ -73,15 +73,21 @@ class Activity:
     leaderboard_opt_out: bool = field(metadata={"sa": Column(Boolean)})
     average_heartrate: float = field(metadata={"sa": Column(Float)})
     max_heartrate: float = field(metadata={"sa": Column(Float)})
+
     segment_efforts: List[SegmentEffort.SegmentEffort] = field(default_factory=list,
-                                                 metadata={"sa": relationship("SegmentEffort")})
+                                                               metadata={"sa": relationship("SegmentEffort")})
+
     splits_metric: List[Split.Split] = field(default_factory=list, metadata={
-        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==True")})
+        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==True)")})
+
     splits_standard: List[Split.Split] = field(default_factory=list, metadata={
-        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==False")})
+        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==False)",
+                           overlaps="splits_metric")})
+
     laps: List[Lap.Lap] = field(default_factory=list, metadata={"sa": relationship("Lap")})
     highlighted_kudosers: List[HighlightedKudoser.HighlightedKudoser] = field(default_factory=list,
                                                            metadata={"sa": relationship("HighlightedKudoser")})
+
     kudos: List[Kudoser.Kudoser] = field(default_factory=list, metadata={"sa": relationship("Kudoser")})
     comments: List[Comment.Comment] = field(default_factory=list, metadata={"sa": relationship("Comment")})
 
@@ -110,7 +116,7 @@ class Activity:
         _comment_count = int(obj.get("comment_count"))
         _athlete_count = int(obj.get("athlete_count"))
         _photo_count = int(obj.get("photo_count"))
-        _map = Map.from_dict(obj.get("map"))
+        _map = Map.Map.from_dict(obj.get("map"))
         _trainer = bool(obj.get("trainer"))
         _commute = bool(obj.get("commute"))
         _manual = bool(obj.get("manual"))
@@ -137,14 +143,14 @@ class Activity:
         _suffer_score = str(obj.get("suffer_score"))
         _description = str(obj.get("description"))
         _calories = float(obj.get("calories"))
-        _segment_efforts = [SegmentEffort.from_dict(y) for y in obj.get("segment_efforts")]
-        _splits_metric = [Split.from_dict(y) for y in obj.get("splits_metric")]
-        _splits_standard = [Split.from_dict(y) for y in obj.get("splits_standard")]
-        _laps = [Lap.from_dict(y) for y in obj.get("laps")]
-        _gear = Gear.from_activity_dict(obj.get("gear"))
+        _segment_efforts = [SegmentEffort.SegmentEffort.from_dict(y) for y in obj.get("segment_efforts")]
+        _splits_metric = [Split.Split.from_dict(y, True) for y in obj.get("splits_metric")]
+        _splits_standard = [Split.Split.from_dict(y, False) for y in obj.get("splits_standard")]
+        _laps = [Lap.Lap.from_dict(y) for y in obj.get("laps")]
+        _gear = Gear.Gear.from_activity_dict(obj.get("gear"))
         _partner_brand_tag = str(obj.get("partner_brand_tag"))
-        _photos = Photos.from_dict(obj.get("photos"))
-        _highlighted_kudosers = [HighlightedKudoser.from_dict(y) for y in obj.get("highlighted_kudosers")] if not obj.get("highlighted_kudosers") is None else None
+        _photos = Photos.Photos.from_dict(obj.get("photos"))
+        _highlighted_kudosers = [HighlightedKudoser.HighlightedKudoser.from_dict(y) for y in obj.get("highlighted_kudosers")] if not obj.get("highlighted_kudosers") is None else None
         _hide_from_home = bool(obj.get("hide_from_home"))
         _device_name = str(obj.get("device_name"))
         _embed_token = str(obj.get("embed_token"))

@@ -27,7 +27,7 @@ class SegmentEffort:
     device_watts: bool = field(metadata={"sa": Column(Boolean)})
     average_watts: float = field(metadata={"sa": Column(Float)})
     segment: Segment = field(metadata={"sa": relationship("Segment",
-                                                          primaryjoin="and_(SegmentEffort.segment_id==Segment.id",
+                                                          primaryjoin="and_(SegmentEffort.segment_id==Segment.id)",
                                                           uselist=False)})
     kom_rank: int = field(metadata={"sa": Column(Integer)})
     pr_rank: int = field(metadata={"sa": Column(Integer)})
@@ -52,7 +52,7 @@ class SegmentEffort:
         _average_cadence = float(obj.get("average_cadence")) if not obj.get("average_cadence") is None else None
         _device_watts = bool(obj.get("device_watts"))
         _average_watts = float(obj.get("average_watts")) if not obj.get("average_watts") is None else None
-        _segment = Segment.from_dict(obj.get("segment"))
+        _segment = Segment.Segment.from_dict(obj.get("segment"))
         _kom_rank = int(obj.get("kom_rank")) if not obj.get("kom_rank") is None else None
         _pr_rank = int(obj.get("pr_rank")) if not obj.get("pr_rank") is None else None
         _hidden = bool(obj.get("hidden"))
