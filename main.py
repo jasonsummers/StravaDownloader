@@ -1,9 +1,14 @@
 import csv
 import datetime
 import json
+
+import dateutil.parser
 import requests
 import urllib3
 from os.path import exists
+
+from sqlalchemy import create_engine, select, desc
+from sqlalchemy.orm import sessionmaker
 
 import DataUtilities
 from Entities import Activity, Comment, Kudoser, Athlete
@@ -171,9 +176,6 @@ def load_activities():
 
     activities_to_add = []
 
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
     for a in activity_ids:
         activity_json_file = source_dir + a + "_activityDetail.json"
 
@@ -263,17 +265,34 @@ def main(arg):
     process_activities(activity_ids, settings, output_format, journal_name)
 
 
+def load_activity_summaries():
+
+    engine = create_engine('sqlite:///strava.sqlite')
+    session = sessionmaker(engine)
+
+    with session() as my_session:
+        latest_activity_query = select(Activity).order_by(Activity.start_date.desc())
+        latest_activity_result = my_session.execute(latest_activity_query).first()
+
+    strava = StravaDataDownloader.StravaDataDownloader()
+    before = None
+    after = dateutil.parser.isoparse(latest_activity_result[0].start_date)
+    activities = strava.get_activities(before, after)
+
+    new_activities = []
+    for a in activities:
+        new_activity = Activity.from_dict(a)
+        new_activities.append(new_activity)
+
+    DataUtilities.save_activities(new_activities)
+
+
 if __name__ == '__main__':
 
     #update()
     #load_athlete()
-    load_activities()
+    #load_activities()
     #main(sys.argv[1:])
     #setup()
-
-    #strava = StravaDataDownloader.StravaDataDownloader()
-    #before = None
-    #after = datetime.datetime(2022, 1, 1)
-    #activities = strava.get_activities(before, after)
-    #print(activities)
+    load_activity_summaries()
 
