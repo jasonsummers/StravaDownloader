@@ -20,6 +20,9 @@ class Photos:
 
     @staticmethod
     def from_dict(obj: Any, activity_id: int) -> 'Photos':
+        if obj is None or obj.get("id") is None:
+            return
+
         _count = int(obj.get("count"))
 
         if _count == 0:

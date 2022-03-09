@@ -104,7 +104,8 @@ class StravaDataDownloader:
             if len(fetched_activites) == 0:
                 break
 
-            activities.append(fetched_activites)
+            for a in fetched_activites:
+                activities.append(a)
 
             page = page + 1
 

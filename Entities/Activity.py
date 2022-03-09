@@ -18,7 +18,7 @@ class Activity:
     upload_id: int = field(metadata={"sa": Column(Integer)})
     athlete_id: int = field(metadata={"sa": Column(Integer)})
     name: str = field(metadata={"sa": Column(String(100))})
-    distance: int = field(metadata={"sa": Column(Integer)})
+    distance: float = field(metadata={"sa": Column(Float)})
     moving_time: int = field(metadata={"sa": Column(Integer)})
     elapsed_time: int = field(metadata={"sa": Column(Integer)})
     total_elevation_gain: int = field(metadata={"sa": Column(Integer)})
@@ -101,7 +101,7 @@ class Activity:
         _upload_id = int(obj.get("upload_id")) if not obj.get("upload_id") is None else 0
         _athlete_id = int(obj.get("athlete")["id"])
         _name = str(obj.get("name"))
-        _distance = int(obj.get("distance"))
+        _distance = float(obj.get("distance"))
         _moving_time = int(obj.get("moving_time"))
         _elapsed_time = int(obj.get("elapsed_time"))
         _total_elevation_gain = int(obj.get("total_elevation_gain"))
@@ -109,7 +109,7 @@ class Activity:
         _start_date = str(obj.get("start_date"))
         _start_date_local = str(obj.get("start_date_local"))
         _timezone = str(obj.get("timezone"))
-        _utc_offset = int(obj.get("utc_offset"))
+        _utc_offset = float(obj.get("utc_offset"))
         _start_lat = float(obj.get("start_latlng")[0]) if len(obj.get("start_latlng")) > 0 else 0.0
         _start_lng = float(obj.get("start_latlng")[1]) if len(obj.get("start_latlng")) > 0 else 0.0
         _end_lat = float(obj.get("end_latlng")[0]) if len(obj.get("end_latlng")) > 0 else 0.0
@@ -145,8 +145,8 @@ class Activity:
         _workout_type = int(obj.get("workout_type")) if not obj.get("workout_type") is None else 0
         _suffer_score = str(obj.get("suffer_score"))
         _description = str(obj.get("description"))
-        _calories = float(obj.get("calories"))
-        _segment_efforts = [SegmentEffort.SegmentEffort.from_dict(y) for y in obj.get("segment_efforts")]
+        _calories = float(obj.get("calories")) if not obj.get("calories") is None else 0
+        _segment_efforts = [SegmentEffort.SegmentEffort.from_dict(y) for y in obj.get("segment_efforts")] if not obj.get("segment_efforts") is None else []
         _splits_metric = [Split.Split.from_dict(y, _id, True) for y in obj.get("splits_metric")] if not obj.get("splits_metric") is None else []
         _splits_standard = [Split.Split.from_dict(y, _id, False) for y in obj.get("splits_standard")] if not obj.get("splits_standard") is None else []
         _laps = [Lap.Lap.from_dict(y) for y in obj.get("laps")] if not obj.get("laps") is None else []
@@ -154,11 +154,11 @@ class Activity:
         _partner_brand_tag = str(obj.get("partner_brand_tag"))
         _photos = Photos.Photos.from_dict(obj.get("photos"), _id)
         _highlighted_kudosers = [HighlightedKudoser.HighlightedKudoser.from_dict(y) for y in obj.get("highlighted_kudosers")] if not obj.get("highlighted_kudosers") is None else []
-        _hide_from_home = bool(obj.get("hide_from_home"))
+        _hide_from_home = bool(obj.get("hide_from_home")) if not obj.get("hide_from_home") is None else False
         _device_name = str(obj.get("device_name"))
         _embed_token = str(obj.get("embed_token"))
-        _segment_leaderboard_opt_out = bool(obj.get("segment_leaderboard_opt_out"))
-        _leaderboard_opt_out = bool(obj.get("leaderboard_opt_out"))
+        _segment_leaderboard_opt_out = bool(obj.get("segment_leaderboard_opt_out")) if not obj.get("segment_leaderboard_opt_out") is None else False
+        _leaderboard_opt_out = bool(obj.get("leaderboard_opt_out")) if not obj.get("leaderboard_opt_out") is None else False
         _average_heartrate = float(obj.get("average_heartrate")) if not obj.get("average_heartrate") is None else 0
         _max_heartrate = float(obj.get("max_heartrate")) if not obj.get("max_heartrate") is None else 0
         _best_efforts = [BestEffort.BestEffort.from_dict(y) for y in obj.get("best_efforts")] if not obj.get("best_efforts") is None else []
