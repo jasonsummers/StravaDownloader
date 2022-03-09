@@ -4,7 +4,7 @@ from typing import List
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session, joinedload
 
-from Entities import Activity, SegmentEffort, Segment
+from Entities import Activity, SegmentEffort, Segment, Athlete
 
 
 def save_activities(activities: List[Activity]):
@@ -45,3 +45,19 @@ def add_new_segments(efforts: List[SegmentEffort]):
 
         if existing_segment_result is not None:
             e.segment = None
+
+
+def save_athlete(athlete: Athlete):
+    engine = create_engine('sqlite:///strava.sqlite')
+    session = sessionmaker(engine)
+
+    with session() as my_session:
+        existing_athlete_query = select(Athlete).filter_by(id=athlete.id)
+        existing_athlete_result = my_session.execute(existing_athlete_query).first()
+
+        if existing_athlete_result is not None:
+            my_session.merge(athlete)
+        else:
+            my_session.add(athlete)
+
+        my_session.commit()

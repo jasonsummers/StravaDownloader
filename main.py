@@ -156,20 +156,12 @@ def update():
 
 
 def load_athlete():
-    with open("/Users/Jason/Desktop/athlete.json") as athlete_file:
-        athlete_json = json.load(athlete_file)
+    strava = StravaDataDownloader.StravaDataDownloader()
+    athlete_json = strava.get_athlete()
+    athlete = Athlete.from_dict(athlete_json)
 
-    new_athlete = Athlete.from_dict(athlete_json)
+    DataUtilities.save_athlete(athlete)
 
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    engine = create_engine('sqlite:///strava.sqlite')
-    Session = sessionmaker(engine)
-
-    with Session() as session:
-        session.add(new_athlete)
-        session.commit()
 
 def load_activities():
     with open('settings.json') as settings_file:

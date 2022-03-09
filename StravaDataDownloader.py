@@ -181,3 +181,10 @@ class StravaDataDownloader:
             if "kudos" in data_type:
                 self.get_activity_kudos(header, a, output_dir)
 
+    def get_athlete(self):
+        header = {'Authorization': 'Bearer ' + self.strava_tokens['access_token']}
+
+        response = self.fetch_from_strava(self.athlete_base_url, header)
+
+        return response
+
