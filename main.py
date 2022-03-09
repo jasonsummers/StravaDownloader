@@ -7,7 +7,7 @@ import requests
 import urllib3
 from os.path import exists
 
-from sqlalchemy import create_engine, select, desc
+from sqlalchemy import create_engine, select, desc, or_, and_
 from sqlalchemy.orm import sessionmaker
 
 import DataUtilities
@@ -287,6 +287,34 @@ def load_activity_summaries():
     DataUtilities.save_activities(new_activities)
 
 
+def download_activity_data(past_days_to_process: int, latest_first: bool):
+    engine = create_engine('sqlite:///strava.sqlite')
+    session = sessionmaker(engine)
+
+    with session() as my_session:
+        latest_activity_query = select(Activity).order_by(Activity.start_date.desc())
+        latest_activity_result = my_session.execute(latest_activity_query).first()
+
+        latest_start_date = dateutil.parser.isoparse(latest_activity_result[0].start_date)
+        start_date = latest_start_date - datetime.timedelta(past_days_to_process)
+
+        activities_to_process_query = select(Activity).filter(
+            or_(
+                Activity.start_date > start_date,
+                and_(
+                    Activity.device_name == "None",
+                    Activity.embed_token == "None"
+                )
+            )
+        )
+        activities_to_process = my_session.execute(activities_to_process_query).all()
+
+        for a in activities_to_process:
+            print(a)
+
+        print(len(activities_to_process))
+
+
 if __name__ == '__main__':
 
     #update()
@@ -294,5 +322,6 @@ if __name__ == '__main__':
     #load_activities()
     #main(sys.argv[1:])
     #setup()
-    load_activity_summaries()
+    #load_activity_summaries()
+    download_activity_data(7, False)
 
