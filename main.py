@@ -298,6 +298,8 @@ def download_activity_data(past_days_to_process: int, latest_first: bool):
         latest_start_date = dateutil.parser.isoparse(latest_activity_result[0].start_date)
         start_date = latest_start_date - datetime.timedelta(past_days_to_process)
 
+        types_to_process = ["Run", "Ride", "Swim"]
+
         activities_to_process_query = select(Activity).filter(
             or_(
                 Activity.start_date > start_date,
@@ -306,12 +308,15 @@ def download_activity_data(past_days_to_process: int, latest_first: bool):
                     Activity.embed_token == "None"
                 )
             )
-        )
+        ).order_by(Activity.start_date.desc())
         activities_to_process = my_session.execute(activities_to_process_query).all()
 
         for a in activities_to_process:
-            print(a)
+            if a[0].type not in types_to_process:
+                continue
 
+            print(a[0].name + ' | ' + a[0].start_date + " | " + a[0].type)
+            #print(a)
         print(len(activities_to_process))
 
 
