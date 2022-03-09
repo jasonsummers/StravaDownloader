@@ -3,6 +3,7 @@ from sqlalchemy.orm import declarative_base
 from .Activity import Activity
 from .Athlete import Athlete
 from .Base import Registry
+from .BestEffort import BestEffort
 from .Comment import Comment
 from .Gear import Gear
 from .HighlightedKudoser import HighlightedKudoser

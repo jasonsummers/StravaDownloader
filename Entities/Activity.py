@@ -3,7 +3,8 @@ from typing import Any
 from dataclasses import dataclass, field
 from sqlalchemy import Column, Integer, Float, String, Boolean
 from sqlalchemy.orm import relationship
-from Entities import Gear, HighlightedKudoser, Lap, Map, Photos, SegmentEffort, Split, Base, Kudoser, Comment
+from Entities import Gear, HighlightedKudoser, Lap, Map, Photos, SegmentEffort, Split, Base, Kudoser, Comment, \
+    BestEffort
 
 
 @Base.Registry.mapped
@@ -88,6 +89,8 @@ class Activity:
     highlighted_kudosers: List[HighlightedKudoser.HighlightedKudoser] = field(default_factory=list,
                                                            metadata={"sa": relationship("HighlightedKudoser")})
 
+    best_efforts: List[BestEffort.BestEffort] = field(default_factory=list, metadata={"sa": relationship("BestEffort")})
+
     kudos: List[Kudoser.Kudoser] = field(default_factory=list, metadata={"sa": relationship("Kudoser")})
     comments: List[Comment.Comment] = field(default_factory=list, metadata={"sa": relationship("Comment")})
 
@@ -158,6 +161,7 @@ class Activity:
         _leaderboard_opt_out = bool(obj.get("leaderboard_opt_out"))
         _average_heartrate = float(obj.get("average_heartrate"))
         _max_heartrate = float(obj.get("max_heartrate"))
+        _best_efforts = [BestEffort.BestEffort.from_dict(y) for y in obj.get("best_efforts")] if not obj.get("best_efforts") is None else []
 
         return Activity(_id, _external_id, _upload_id, _athlete_id, _name, _distance, _moving_time, _elapsed_time,
                         _total_elevation_gain, _type, _start_date, _start_date_local, _timezone, _utc_offset,
@@ -169,4 +173,4 @@ class Activity:
                         _description, _calories, _gear, _partner_brand_tag, _photos, _hide_from_home, _device_name,
                         _embed_token, _segment_leaderboard_opt_out, _leaderboard_opt_out, _average_heartrate,
                         _max_heartrate, _segment_efforts, _splits_metric, _splits_standard, _laps,
-                        _highlighted_kudosers)
+                        _highlighted_kudosers, _best_efforts)
