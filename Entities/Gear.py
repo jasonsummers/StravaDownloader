@@ -11,7 +11,7 @@ class Gear:
     __sa_dataclass_metadata_key__ = "sa"
 
     id: str = field(metadata={"sa": Column(String(25), ForeignKey("activities.gear_id"), primary_key=True)})
-    athlete_id: int = field(metadata={"sa": Column(Integer, ForeignKey("athletes.id"))})
+    athlete_id: int = field(init=False, metadata={"sa": Column(Integer, ForeignKey("athletes.id"))})
     primary: bool = field(metadata={"sa": Column(Boolean)})
     gear_type: str = field(metadata={"sa": Column(String(4))})
     name: str = field(metadata={"sa": Column(String(50))})
@@ -40,4 +40,4 @@ class Gear:
         _retired = bool(obj.get("retired"))
         _distance = int(obj.get("distance"))
         _converted_distance = float(obj.get("converted_distance"))
-        return Gear(_id, None, _primary, gear_type, _name, _nickname, _retired, _distance, _converted_distance)
+        return Gear(_id, _primary, gear_type, _name, _nickname, _retired, _distance, _converted_distance)

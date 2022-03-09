@@ -65,7 +65,7 @@ class Activity:
     gear: Gear = field(metadata={"sa": relationship("Gear", primaryjoin="and_(Activity.gear_id==Gear.id)",
                                                     uselist=False)})
     partner_brand_tag: str = field(metadata={"sa": Column(String(50))})
-    photos: Photos = field(metadata={"sa": relationship("Photos")})
+    photos: Photos = field(metadata={"sa": relationship("Photos", uselist=False)})
     hide_from_home: bool = field(metadata={"sa": Column(Boolean)})
     device_name: str = field(metadata={"sa": Column(String(50))})
     embed_token: str = field(metadata={"sa": Column(String(50))})
@@ -107,10 +107,10 @@ class Activity:
         _start_date_local = str(obj.get("start_date_local"))
         _timezone = str(obj.get("timezone"))
         _utc_offset = int(obj.get("utc_offset"))
-        _start_lat = float(obj.get("start_latlng")[0])
-        _start_lng = float(obj.get("start_latlng")[1])
-        _end_lat = float(obj.get("end_latlng")[0])
-        _end_lng = float(obj.get("end_latlng")[1])
+        _start_lat = float(obj.get("start_latlng")[0]) if len(obj.get("start_latlng")) > 0 else 0.0
+        _start_lng = float(obj.get("start_latlng")[1]) if len(obj.get("start_latlng")) > 0 else 0.0
+        _end_lat = float(obj.get("end_latlng")[0]) if len(obj.get("end_latlng")) > 0 else 0.0
+        _end_lng = float(obj.get("end_latlng")[1]) if len(obj.get("end_latlng")) > 0 else 0.0
         _achievement_count = int(obj.get("achievement_count"))
         _kudos_count = int(obj.get("kudos_count"))
         _comment_count = int(obj.get("comment_count"))
@@ -126,20 +126,20 @@ class Activity:
         _from_accepted_tag = bool(obj.get("from_accepted_tag"))
         _average_speed = float(obj.get("average_speed"))
         _max_speed = float(obj.get("max_speed"))
-        _average_cadence = float(obj.get("average_cadence")) if not obj.get("average_cadence") is None else None
-        _average_temp = int(obj.get("average_temp")) if not obj.get("average_temp") is None else None
-        _average_watts = float(obj.get("average_watts")) if not obj.get("average_watts") is None else None
-        _weighted_average_watts = int(obj.get("weighted_average_watts")) if not obj.get("weighted_average_watts") is None else None
-        _kilojoules = float(obj.get("kilojoules")) if not obj.get("kilojoules") is None else None
+        _average_cadence = float(obj.get("average_cadence")) if not obj.get("average_cadence") is None else 0.0
+        _average_temp = int(obj.get("average_temp")) if not obj.get("average_temp") is None else 0
+        _average_watts = float(obj.get("average_watts")) if not obj.get("average_watts") is None else 0.0
+        _weighted_average_watts = int(obj.get("weighted_average_watts")) if not obj.get("weighted_average_watts") is None else 0
+        _kilojoules = float(obj.get("kilojoules")) if not obj.get("kilojoules") is None else 0.0
         _device_watts = bool(obj.get("device_watts"))
         _has_heartrate = bool(obj.get("has_heartrate"))
-        _max_watts = int(obj.get("max_watts")) if not obj.get("max_watts") is None else None
-        _elev_high = float(obj.get("elev_high")) if not obj.get("elev_high") is None else None
-        _elev_low = float(obj.get("elev_low")) if not obj.get("elev_low") is None else None
+        _max_watts = int(obj.get("max_watts")) if not obj.get("max_watts") is None else 0
+        _elev_high = float(obj.get("elev_high")) if not obj.get("elev_high") is None else 0.0
+        _elev_low = float(obj.get("elev_low")) if not obj.get("elev_low") is None else 0.0
         _pr_count = int(obj.get("pr_count"))
         _total_photo_count = int(obj.get("total_photo_count"))
         _has_kudoed = bool(obj.get("has_kudoed"))
-        _workout_type = int(obj.get("workout_type")) if not obj.get("workout_type") is None else None
+        _workout_type = int(obj.get("workout_type")) if not obj.get("workout_type") is None else 0
         _suffer_score = str(obj.get("suffer_score"))
         _description = str(obj.get("description"))
         _calories = float(obj.get("calories"))
@@ -150,7 +150,7 @@ class Activity:
         _gear = Gear.Gear.from_activity_dict(obj.get("gear"))
         _partner_brand_tag = str(obj.get("partner_brand_tag"))
         _photos = Photos.Photos.from_dict(obj.get("photos"))
-        _highlighted_kudosers = [HighlightedKudoser.HighlightedKudoser.from_dict(y) for y in obj.get("highlighted_kudosers")] if not obj.get("highlighted_kudosers") is None else None
+        _highlighted_kudosers = [HighlightedKudoser.HighlightedKudoser.from_dict(y) for y in obj.get("highlighted_kudosers")] if not obj.get("highlighted_kudosers") is None else []
         _hide_from_home = bool(obj.get("hide_from_home"))
         _device_name = str(obj.get("device_name"))
         _embed_token = str(obj.get("embed_token"))

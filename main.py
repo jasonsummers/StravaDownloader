@@ -5,6 +5,7 @@ import requests
 import urllib3
 from os.path import exists
 
+import DataUtilities
 from Entities import Activity, Comment, Kudoser, Athlete
 import polylinetoimg
 import ActivityProcessor
@@ -141,7 +142,7 @@ def update():
     activity_ids = get_activity_ids(settings["strava_activities_file"])
 
     import requests
-    header = {'Authorization': 'Bearer ***REMOVED***'}
+    header = {'Authorization': 'Bearer '}
     for aid in activity_ids:
         print('ActivityId: ' + aid)
         response = requests.put(
@@ -176,6 +177,8 @@ def load_activities():
     activity_ids = get_activity_ids(settings["strava_activities_file"])
     source_dir = settings["data_location"]
 
+    activities_to_add = []
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
@@ -199,7 +202,7 @@ def load_activities():
                 kudos_dict = json.loads(kudos_json.read())
                 kudos = Kudoser.list_from_dict_array(kudos_dict)
         else:
-            kudos = None
+            kudos = []
 
         activity_comments_file = source_dir + a + "_activityComments.json"
 
@@ -209,17 +212,14 @@ def load_activities():
                 comments_dict = json.loads(comments_json.read())
                 comments = Comment.list_from_dict_array(comments_dict)
         else:
-            comments = None
+            comments = []
 
         activity_details.kudos = kudos
         activity_details.comments = comments
 
-        engine = create_engine('sqlite:///strava.sqlite')
-        Session = sessionmaker(engine)
+        activities_to_add.append(activity_details)
 
-        with Session() as session:
-            session.add(activity_details)
-            session.commit()
+    DataUtilities.save_activities(activities_to_add)
 
 
 def main(arg):
