@@ -2,7 +2,7 @@ from itertools import islice
 from typing import List
 
 from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, joinedload
 
 from Entities import Activity, SegmentEffort, Segment
 
@@ -12,15 +12,15 @@ def save_activities(activities: List[Activity]):
     session = sessionmaker(engine)
 
     for a in activities:
-        add_new_segments(a.segment_efforts)
 
         with session() as my_session:
-            existing_activity_query = select(Activity).filter_by(id=a.id)
-            existing_activity_result = my_session.execute(existing_activity_query).all()
+            existing_activity_query = select(Activity).options(joinedload(Activity.segment_efforts)).filter_by(id=a.id)
+            existing_activity_result = my_session.execute(existing_activity_query).first()
 
-            if len(existing_activity_result) > 0:
+            if existing_activity_result is not None:
                 my_session.merge(a)
             else:
+                add_new_segments(a.segment_efforts)
                 my_session.add(a)
 
             my_session.commit()
@@ -41,7 +41,7 @@ def add_new_segments(efforts: List[SegmentEffort]):
             d.segment = None
 
         existing_segment_query = select(Segment).filter_by(id=e.segment_id)
-        existing_segment_result = session.execute(existing_segment_query).all()
+        existing_segment_result = session.execute(existing_segment_query).first()
 
-        if len(existing_segment_result) > 0:
+        if existing_segment_result is not None:
             e.segment = None

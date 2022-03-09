@@ -144,12 +144,12 @@ class Activity:
         _description = str(obj.get("description"))
         _calories = float(obj.get("calories"))
         _segment_efforts = [SegmentEffort.SegmentEffort.from_dict(y) for y in obj.get("segment_efforts")]
-        _splits_metric = [Split.Split.from_dict(y, True) for y in obj.get("splits_metric")]
-        _splits_standard = [Split.Split.from_dict(y, False) for y in obj.get("splits_standard")]
+        _splits_metric = [Split.Split.from_dict(y, _id, True) for y in obj.get("splits_metric")]
+        _splits_standard = [Split.Split.from_dict(y, _id, False) for y in obj.get("splits_standard")]
         _laps = [Lap.Lap.from_dict(y) for y in obj.get("laps")]
         _gear = Gear.Gear.from_activity_dict(obj.get("gear"))
         _partner_brand_tag = str(obj.get("partner_brand_tag"))
-        _photos = Photos.Photos.from_dict(obj.get("photos"))
+        _photos = Photos.Photos.from_dict(obj.get("photos"), _id)
         _highlighted_kudosers = [HighlightedKudoser.HighlightedKudoser.from_dict(y) for y in obj.get("highlighted_kudosers")] if not obj.get("highlighted_kudosers") is None else []
         _hide_from_home = bool(obj.get("hide_from_home"))
         _device_name = str(obj.get("device_name"))

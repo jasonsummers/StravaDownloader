@@ -200,7 +200,7 @@ def load_activities():
         if settings["include_strava_kudos"] and exists(activity_kudos_file) and activity_details.kudos_count > 0:
             with open(activity_kudos_file, "r") as kudos_json:
                 kudos_dict = json.loads(kudos_json.read())
-                kudos = Kudoser.list_from_dict_array(kudos_dict)
+                kudos = Kudoser.list_from_dict_array(kudos_dict, activity_details.id)
         else:
             kudos = []
 
