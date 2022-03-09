@@ -98,7 +98,7 @@ class Activity:
     def from_dict(obj: Any) -> 'Activity':
         _id = int(obj.get("id"))
         _external_id = str(obj.get("external_id"))
-        _upload_id = int(obj.get("upload_id"))
+        _upload_id = int(obj.get("upload_id")) if not obj.get("upload_id") is None else 0
         _athlete_id = int(obj.get("athlete")["id"])
         _name = str(obj.get("name"))
         _distance = int(obj.get("distance"))
@@ -147,9 +147,9 @@ class Activity:
         _description = str(obj.get("description"))
         _calories = float(obj.get("calories"))
         _segment_efforts = [SegmentEffort.SegmentEffort.from_dict(y) for y in obj.get("segment_efforts")]
-        _splits_metric = [Split.Split.from_dict(y, _id, True) for y in obj.get("splits_metric")]
-        _splits_standard = [Split.Split.from_dict(y, _id, False) for y in obj.get("splits_standard")]
-        _laps = [Lap.Lap.from_dict(y) for y in obj.get("laps")]
+        _splits_metric = [Split.Split.from_dict(y, _id, True) for y in obj.get("splits_metric")] if not obj.get("splits_metric") is None else []
+        _splits_standard = [Split.Split.from_dict(y, _id, False) for y in obj.get("splits_standard")] if not obj.get("splits_standard") is None else []
+        _laps = [Lap.Lap.from_dict(y) for y in obj.get("laps")] if not obj.get("laps") is None else []
         _gear = Gear.Gear.from_activity_dict(obj.get("gear"))
         _partner_brand_tag = str(obj.get("partner_brand_tag"))
         _photos = Photos.Photos.from_dict(obj.get("photos"), _id)
@@ -159,8 +159,8 @@ class Activity:
         _embed_token = str(obj.get("embed_token"))
         _segment_leaderboard_opt_out = bool(obj.get("segment_leaderboard_opt_out"))
         _leaderboard_opt_out = bool(obj.get("leaderboard_opt_out"))
-        _average_heartrate = float(obj.get("average_heartrate"))
-        _max_heartrate = float(obj.get("max_heartrate"))
+        _average_heartrate = float(obj.get("average_heartrate")) if not obj.get("average_heartrate") is None else 0
+        _max_heartrate = float(obj.get("max_heartrate")) if not obj.get("max_heartrate") is None else 0
         _best_efforts = [BestEffort.BestEffort.from_dict(y) for y in obj.get("best_efforts")] if not obj.get("best_efforts") is None else []
 
         return Activity(_id, _external_id, _upload_id, _athlete_id, _name, _distance, _moving_time, _elapsed_time,
