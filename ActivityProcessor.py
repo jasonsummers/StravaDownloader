@@ -159,7 +159,10 @@ class ActivityProcessor:
         return distance_string, pace_string
 
     def _process_activity_details(self, activity: Activity):
-        description = "{0}  \n".format(activity.description) if activity.description is not None else ""
+        description = ""
+        if activity.description is not None and activity.description != "None":
+            description = "{0}  \n".format(activity.description)
+
         moving_time = time.gmtime(activity.moving_time)
         elapsed_time = time.gmtime(activity.elapsed_time)
 
