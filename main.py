@@ -273,11 +273,53 @@ def download_activity_data(past_days_to_process: int, latest_first: bool, types_
 
 if __name__ == '__main__':
 
-    #update()
-    #load_athlete()
-    #load_activities()
-    #main(sys.argv[1:])
-    #setup()
-    #load_activity_summaries()
-    download_activity_data(7, False)
+    if len(sys.argv) > 1:
+        #update()
+        #load_athlete()
+        #load_activities()
+        main(sys.argv[1:])
+        #setup()
+        #load_activity_summaries()
+        #download_activity_data(7, True)
+    else:
+        print("Welcome to the Strava Utilities Application")
+
+        quit_application = False
+        while not quit_application:
+            print("Please select one of the following options:\n"
+                  "[0] : Quit Application\n"
+                  "[1] : Download data from Strava\n"
+                  "[2] : Output data")
+
+            action = input("Input option and press 'Enter': ")
+
+            if action == "0":
+                quit_application = True
+            elif action == "1":
+                load_athlete()
+                load_activity_summaries()
+                types = input("Please enter activity types (e.g. 'Run,Ride') - Default is 'Run,Ride,Swim': ")
+                if types == "":
+                    types = "Ride,Run,Swim"
+                download_activity_data(7, True, types.split(","))
+            elif action == "2":
+                print("Please select output format:\n"
+                      "[1] : Markdown\n"
+                      "[2] : DayOne Terminal Command\n"
+                      "[3] : Direct to DayOne")
+
+                format_selection = input("Input option and press 'Enter': ")
+                if format_selection == "1":
+                    output_format = "markdown_terminal"
+                if format_selection == "2":
+                    output_format = "dayone_terminal"
+                if format_selection == "3":
+                    output_format = "dayone"
+
+                start_date = input("Please input start date (e.g 1st Jan 2022 = '01-01-2022'): ")
+                types = input("Please enter activity types (e.g. 'Run,Ride') - Default is 'Run,Ride,Swim': ")
+                if types == "":
+                    types = "Ride,Run,Swim"
+
+                main(["-o", output_format, "-j", "Strava", "-d", start_date, "-t", types])
 
