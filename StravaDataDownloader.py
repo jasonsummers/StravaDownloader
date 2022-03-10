@@ -56,21 +56,30 @@ class StravaDataDownloader:
         return self.strava_tokens['access_token']
 
     def fetch_from_strava(self, url, header, param=""):
-        if param:
-            response = requests.get(url, params=param, headers=header).json()
-        else:
-            response = requests.get(url, headers=header).json()
+        max_retries = 3
+        retry_count = 0
 
-        if "errors" not in response:
-            return response
+        while retry_count < max_retries:
+            if param:
+                response = requests.get(url, params=param, headers=header).json()
+            else:
+                response = requests.get(url, headers=header).json()
 
-        print("Error Downloading from Strava...")
-        print("Message: {0}".format(response["message"]))
-        print("Errors:")
-        for e in response["errors"]:
-            print("    resource: {0}, field: {1}, code: {2}".format(e["resource"], e["field"], e["code"]))
+            if "errors" not in response:
+                return response
 
-        exit(1)
+            print("Error Downloading from Strava...")
+            print("Message: {0}".format(response["message"]))
+            print("Errors:")
+            for e in response["errors"]:
+                print("    resource: {0}, field: {1}, code: {2}".format(e["resource"], e["field"], e["code"]))
+                if e["field"] == "rate limit":
+                    print("Rate Limit Error detected. Waiting 16 minutes before continuing.")
+                    time.sleep(16 * 60)
+
+            retry_count += 1
+
+        return None
 
     def update_activities_list(self):
         activities_file_path = "/activities.csv".format(self.settings["data_location"])
@@ -92,13 +101,12 @@ class StravaDataDownloader:
             url_format += "&after={0}".format(after.strftime('%s'))
 
         activities = []
-
-        header = {'Authorization': 'Bearer ' + self.strava_tokens['access_token']}
+        header = self.generate_header()
 
         page = 1
         while True:
             the_url = "{0}&page={1}".format(url_format, page)
-            print(the_url)
+
             fetched_activites = self.fetch_from_strava(the_url, header)
 
             if len(fetched_activites) == 0:
@@ -111,7 +119,8 @@ class StravaDataDownloader:
 
         return activities
 
-    def get_activity_detail(self, header, activity_id, output_directory):
+    def get_activity_detail(self, activity_id, output_directory):
+        header = self.generate_header()
         the_url = "{0}/{1}".format(self.activity_base_url, activity_id)
         file_path = "{0}{1}_activityDetail.json".format(output_directory, activity_id)
 
@@ -129,7 +138,8 @@ class StravaDataDownloader:
 
         return response
 
-    def get_activity_comments(self, header, activity_id, output_directory):
+    def get_activity_comments(self, activity_id, output_directory):
+        header = self.generate_header()
         the_url = "{0}/{1}/comments".format(self.activity_base_url, activity_id)
         file_path = "{0}{1}_activityComments.json".format(output_directory, activity_id)
 
@@ -146,7 +156,8 @@ class StravaDataDownloader:
 
         return response
 
-    def get_activity_kudos(self, header, activity_id, output_directory):
+    def get_activity_kudos(self, activity_id, output_directory):
+        header = self.generate_header()
         the_url = "{0}/{1}/kudos".format(self.activity_base_url, activity_id)
         file_path = "{0}{1}_activityKudos.json".format(output_directory, activity_id)
 
@@ -165,27 +176,26 @@ class StravaDataDownloader:
 
     def get_data(self, activities, data_type, output_dir):
 
-        header = {'Authorization': 'Bearer ' + self.strava_tokens['access_token']}
-
         for a in activities:
             if data_type == "all":
-                detail = self.get_activity_detail(header, a, output_dir)
+                detail = self.get_activity_detail(a, output_dir)
                 if detail["comment_count"] > 0:
-                    self.get_activity_comments(header, a, output_dir)
+                    self.get_activity_comments(a, output_dir)
                 if detail["kudos_count"] > 0:
-                    self.get_activity_kudos(header, a, output_dir)
+                    self.get_activity_kudos(a, output_dir)
                 return
             if "detail" in data_type:
-                self.get_activity_detail(header, a, output_dir)
+                self.get_activity_detail(a, output_dir)
             if "comments" in data_type:
-                self.get_activity_comments(header, a, output_dir)
+                self.get_activity_comments(a, output_dir)
             if "kudos" in data_type:
-                self.get_activity_kudos(header, a, output_dir)
+                self.get_activity_kudos(a, output_dir)
 
     def get_athlete(self):
-        header = {'Authorization': 'Bearer ' + self.strava_tokens['access_token']}
-
+        header = self.generate_header()
         response = self.fetch_from_strava(self.athlete_base_url, header)
-
         return response
 
+    def generate_header(self):
+        header = {'Authorization': 'Bearer ' + self.strava_tokens['access_token']}
+        return header

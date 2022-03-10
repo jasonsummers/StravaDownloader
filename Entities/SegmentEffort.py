@@ -56,8 +56,8 @@ class SegmentEffort:
         _kom_rank = int(obj.get("kom_rank")) if not obj.get("kom_rank") is None else None
         _pr_rank = int(obj.get("pr_rank")) if not obj.get("pr_rank") is None else None
         _hidden = bool(obj.get("hidden"))
-        _average_heartrate = float(obj.get("average_heartrate"))
-        _max_heartrate = float(obj.get("max_heartrate"))
+        _average_heartrate = float(obj.get("average_heartrate")) if not obj.get("average_heartrate") is None else None
+        _max_heartrate = float(obj.get("max_heartrate")) if not obj.get("max_heartrate") is None else None
         _segment_id = _segment.id
         return SegmentEffort(_id, _name, _activity_id, _athlete_id, _elapsed_time, _moving_time, _start_date,
                              _start_date_local, _distance, _start_index, _end_index, _average_cadence, _device_watts,

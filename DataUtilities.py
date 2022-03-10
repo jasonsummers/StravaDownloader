@@ -26,6 +26,26 @@ def save_activities(activities: List[Activity]):
             my_session.commit()
 
 
+def save_activity(activity: Activity, initial_detail_load: bool):
+    engine = create_engine('sqlite:///strava.sqlite')
+    session = sessionmaker(engine)
+
+    with session() as my_session:
+        existing_activity_query = select(Activity).options(joinedload(Activity.segment_efforts)).filter_by(
+            id=activity.id)
+        existing_activity_result = my_session.execute(existing_activity_query).first()
+
+        if existing_activity_result is not None:
+            if initial_detail_load:
+                add_new_segments(activity.segment_efforts)
+            my_session.merge(activity)
+        else:
+            add_new_segments(activity.segment_efforts)
+            my_session.add(activity)
+
+        my_session.commit()
+
+
 def add_new_segments(efforts: List[SegmentEffort]):
     engine = create_engine('sqlite:///strava.sqlite')
     session = Session(engine, future=True)

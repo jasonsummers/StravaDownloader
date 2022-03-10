@@ -30,7 +30,7 @@ class Split:
         _split = int(obj.get("split"))
         _average_speed = float(obj.get("average_speed"))
         _pace_zone = int(obj.get("pace_zone"))
-        _average_heartrate = float(obj.get("average_heartrate"))
+        _average_heartrate = float(obj.get("average_heartrate")) if not obj.get("average_heartrate") is None else None
 
         return Split(activity_id, _distance, _elapsed_time, _elevation_difference, _moving_time, _split,
                      _average_speed, _pace_zone, _average_heartrate, is_metric)

@@ -288,8 +288,12 @@ def load_activity_summaries():
 
 
 def download_activity_data(past_days_to_process: int, latest_first: bool):
+    with open('settings.json') as settings_file:
+        settings = json.load(settings_file)
+
     engine = create_engine('sqlite:///strava.sqlite')
     session = sessionmaker(engine)
+    strava = StravaDataDownloader.StravaDataDownloader()
 
     with session() as my_session:
         latest_activity_query = select(Activity).order_by(Activity.start_date.desc())
@@ -308,16 +312,35 @@ def download_activity_data(past_days_to_process: int, latest_first: bool):
                     Activity.embed_token == "None"
                 )
             )
-        ).order_by(Activity.start_date.desc())
+        )
+
+        if latest_first:
+            activities_to_process_query = activities_to_process_query.order_by(Activity.start_date.desc())
+        else:
+            activities_to_process_query = activities_to_process_query.order_by(Activity.start_date)
+
         activities_to_process = my_session.execute(activities_to_process_query).all()
 
         for a in activities_to_process:
             if a[0].type not in types_to_process:
                 continue
 
-            print(a[0].name + ' | ' + a[0].start_date + " | " + a[0].type)
-            #print(a)
-        print(len(activities_to_process))
+            print("Downloading detail for Activity ID: {0}".format(a[0].id))
+
+            activity_json = strava.get_activity_detail(a[0].id, None)
+            activity = Activity.from_dict(activity_json)
+
+            if activity.kudos_count > 0 and settings["include_strava_kudos"]:
+                kudos_json = strava.get_activity_kudos(a[0].id, None)
+                kudos = Kudoser.list_from_dict_array(kudos_json, a[0].id)
+                activity.kudos = kudos
+
+            if activity.comment_count > 0 and settings["include_strava_comments"]:
+                comments_json = strava.get_activity_comments(a[0].id, None)
+                comments = Comment.list_from_dict_array(comments_json)
+                activity.comments = comments
+
+            DataUtilities.save_activity(activity, True)
 
 
 if __name__ == '__main__':

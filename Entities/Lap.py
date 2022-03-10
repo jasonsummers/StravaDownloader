@@ -53,8 +53,8 @@ class Lap:
         _average_watts = float(obj.get("average_watts")) if not obj.get("average_watts") is None else None
         _lap_index = int(obj.get("lap_index"))
         _split = int(obj.get("split"))
-        _average_heartrate = float(obj.get("average_heartrate"))
-        _max_heartrate = float(obj.get("max_heartrate"))
+        _average_heartrate = float(obj.get("average_heartrate")) if not obj.get("average_heartrate") is None else None
+        _max_heartrate = float(obj.get("max_heartrate")) if not obj.get("max_heartrate") is None else None
         return Lap(_id, _name, _activity_id, _athlete_id, _elapsed_time, _moving_time, _start_date,
                    _start_date_local, _distance, _start_index, _end_index, _total_elevation_gain, _average_speed,
                    _max_speed, _average_cadence, _device_watts, _average_watts, _lap_index, _split, _average_heartrate,
