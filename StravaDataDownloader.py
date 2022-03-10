@@ -81,16 +81,6 @@ class StravaDataDownloader:
 
         return None
 
-    def update_activities_list(self):
-        activities_file_path = "/activities.csv".format(self.settings["data_location"])
-
-        if exists(activities_file_path):
-            lines = open(activities_file_path).readlines()[-1:]  # Assumes the file can fit into memory
-            last_line = [line.split()[0] for line in lines]
-
-        with open(activities_file_path, "w") as activites_file:
-            csv_reader = csv.reader(activites_file, delimiter=',')
-
     def get_activities(self, before: datetime.date, after: datetime.date):
         url_format = "{0}/activities?per_page=200".format(self.athlete_base_url)
 

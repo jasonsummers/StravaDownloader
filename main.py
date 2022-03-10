@@ -1,7 +1,6 @@
 import datetime
 import json
 from typing import List
-
 import dateutil.parser
 import requests
 import urllib3
@@ -44,11 +43,6 @@ def get_activity_ids(before: datetime, after: datetime, activity_types: List[str
     return activity_ids
 
 
-def get_data(activities, data_type, output_dir):
-    strava = StravaDataDownloader.StravaDataDownloader()
-    strava.get_data(activities, data_type, output_dir)
-
-
 def download_activity_image(activity_id, url, output_dir):
     filepath = "{0}/map_images/{1}.png".format(output_dir, activity_id)
 
@@ -73,8 +67,6 @@ def process_activities(activity_ids, settings, output_format, journal_name):
     session = sessionmaker(engine)
 
     mappy = polylinetoimg.PolylineToImg(settings["azure_maps_key"])
-
-    source_dir = settings["data_location"]
 
     for a in activity_ids:
         with session() as my_session:
@@ -118,7 +110,7 @@ def process_activities(activity_ids, settings, output_format, journal_name):
 
         if activity.map.polyline:
             entry_image = mappy.get_image_url(activity.map.polyline)
-            downloaded_image = download_activity_image(a, entry_image, source_dir)
+            downloaded_image = download_activity_image(a, entry_image, os.getcwd())
             shell_command += " --attachments \"{0}\"".format(downloaded_image)
 
         shell_command += " -- new \"{0}\"".format(entry_body)
@@ -157,54 +149,6 @@ def load_athlete():
     athlete = Athlete.from_dict(athlete_json)
 
     DataUtilities.save_athlete(athlete)
-
-
-def load_activities():
-    with open('settings.json') as settings_file:
-        settings = json.load(settings_file)
-    activity_ids = get_activity_ids(settings["strava_activities_file"])
-    source_dir = settings["data_location"]
-
-    activities_to_add = []
-
-    for a in activity_ids:
-        activity_json_file = source_dir + a + "_activityDetail.json"
-
-        if exists(activity_json_file):
-            with open(activity_json_file, "r") as activity_json:
-                activity_details_json = json.loads(activity_json.read())
-                activity_details = Activity.from_dict(activity_details_json)
-            if activity_details.distance < 0.1:
-                continue
-        else:
-            # We have no details for the activity ID so skip it
-            continue
-
-        activity_kudos_file = source_dir + a + "_activityKudos.json"
-
-        if settings["include_strava_kudos"] and exists(activity_kudos_file) and activity_details.kudos_count > 0:
-            with open(activity_kudos_file, "r") as kudos_json:
-                kudos_dict = json.loads(kudos_json.read())
-                kudos = Kudoser.list_from_dict_array(kudos_dict, activity_details.id)
-        else:
-            kudos = []
-
-        activity_comments_file = source_dir + a + "_activityComments.json"
-
-        if settings["include_strava_comments"] and exists(activity_comments_file) \
-                and activity_details.comment_count > 0:
-            with open(activity_comments_file, "r") as comments_json:
-                comments_dict = json.loads(comments_json.read())
-                comments = Comment.list_from_dict_array(comments_dict)
-        else:
-            comments = []
-
-        activity_details.kudos = kudos
-        activity_details.comments = comments
-
-        activities_to_add.append(activity_details)
-
-    DataUtilities.save_activities(activities_to_add)
 
 
 def main(arg):
