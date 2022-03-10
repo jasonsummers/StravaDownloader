@@ -266,7 +266,9 @@ def download_activity_data(past_days_to_process: int, latest_first: bool, types_
                 comments = Comment.list_from_dict_array(comments_json)
                 activity.comments = comments
 
-            DataUtilities.save_activity(activity, True)
+            initial_detail_load = a[0].device_name == "None" and a[0].embed_token == "None"
+
+            DataUtilities.save_activity(activity, initial_detail_load)
 
 
 if __name__ == '__main__':
