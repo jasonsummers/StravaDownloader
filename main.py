@@ -69,6 +69,8 @@ def process_activities(activity_ids, settings, output_format, journal_name):
     mappy = polylinetoimg.PolylineToImg(settings["azure_maps_key"])
 
     for a in activity_ids:
+        print("Processing Activity ID {0}".format(a))
+
         with session() as my_session:
             activity_query = select(Activity).options(
                 joinedload(Activity.map),
@@ -182,8 +184,10 @@ def main(arg):
         elif opt in ("-t", "--activitytypes"):
             activity_types = arg
 
+    activity_types_list = activity_types.split(",")
+
     after = dateutil.parser.parse(start_date)
-    activity_ids = get_activity_ids(None, after, ["Run", "Ride", "Swim"])
+    activity_ids = get_activity_ids(None, after, activity_types_list)
 
     process_activities(activity_ids, settings, output_format, journal_name)
 
@@ -210,7 +214,7 @@ def load_activity_summaries():
     DataUtilities.save_activities(new_activities)
 
 
-def download_activity_data(past_days_to_process: int, latest_first: bool):
+def download_activity_data(past_days_to_process: int, latest_first: bool, types_to_process: List[str]):
     with open('settings.json') as settings_file:
         settings = json.load(settings_file)
 
@@ -224,8 +228,6 @@ def download_activity_data(past_days_to_process: int, latest_first: bool):
 
         latest_start_date = dateutil.parser.isoparse(latest_activity_result[0].start_date)
         start_date = latest_start_date - datetime.timedelta(past_days_to_process)
-
-        types_to_process = ["Run", "Ride", "Swim"]
 
         activities_to_process_query = select(Activity).filter(
             or_(
@@ -245,8 +247,9 @@ def download_activity_data(past_days_to_process: int, latest_first: bool):
         activities_to_process = my_session.execute(activities_to_process_query).all()
 
         for a in activities_to_process:
-            if a[0].type not in types_to_process:
-                continue
+            if types_to_process is not None:
+                if a[0].type not in types_to_process:
+                    continue
 
             print("Downloading detail for Activity ID: {0}".format(a[0].id))
 
