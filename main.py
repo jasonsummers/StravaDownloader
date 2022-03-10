@@ -1,6 +1,6 @@
-import csv
 import datetime
 import json
+from typing import List
 
 import dateutil.parser
 import requests
@@ -8,7 +8,7 @@ import urllib3
 from os.path import exists
 
 from sqlalchemy import create_engine, select, desc, or_, and_
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, joinedload
 
 import DataUtilities
 from Entities import Activity, Comment, Kudoser, Athlete
@@ -22,23 +22,26 @@ import shutil
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_activity_ids(strava_activities_file):
-    from dateutil import parser
+def get_activity_ids(before: datetime, after: datetime, activity_types: List[str]):
+    engine = create_engine('sqlite:///strava.sqlite')
+    session = sessionmaker(engine)
 
-    activities = []
-    with open(strava_activities_file) as activities_csv:
-        csv_reader = csv.reader(activities_csv, delimiter=',')
-        line_count = 0
-        for row in csv_reader:
-            if line_count == 0:
-                line_count = line_count + 1
-            else:
-                if parser.parse(row[1]).year != 2021 or row[3] != "Run":
-                    continue
+    activity_ids = []
+    with session() as my_session:
+        activity_query = select(Activity.id, Activity.type)
 
-                activities.append(row[0])
+        if before:
+            activity_query = activity_query.filter(Activity.start_date < before)
 
-    return activities
+        if after:
+            activity_query = activity_query.filter(Activity.start_date > after)
+
+        activity_result = my_session.execute(activity_query).all()
+        for a in activity_result:
+            if a["type"] in activity_types:
+                activity_ids.append(a["id"])
+
+    return activity_ids
 
 
 def get_data(activities, data_type, output_dir):
@@ -66,44 +69,33 @@ def download_activity_image(activity_id, url, output_dir):
 
 def process_activities(activity_ids, settings, output_format, journal_name):
 
+    engine = create_engine('sqlite:///strava.sqlite')
+    session = sessionmaker(engine)
+
     mappy = polylinetoimg.PolylineToImg(settings["azure_maps_key"])
 
     source_dir = settings["data_location"]
 
     for a in activity_ids:
+        with session() as my_session:
+            activity_query = select(Activity).options(
+                joinedload(Activity.map),
+                joinedload(Activity.gear),
+                joinedload(Activity.segment_efforts),
+                joinedload(Activity.splits_metric),
+                joinedload(Activity.splits_standard),
+                joinedload(Activity.laps),
+                joinedload(Activity.kudos),
+                joinedload(Activity.comments)
+            ).filter_by(id=a)
+            activity_result = my_session.execute(activity_query).first()
 
-        activity_json_file = source_dir + a + "_activityDetail.json"
-
-        if exists(activity_json_file):
-            with open(activity_json_file, "r") as activity_json:
-                activity_details_json = json.loads(activity_json.read())
-                activity_details = Activity.Activity.from_dict(activity_details_json)
-            if activity_details.distance < 0.1:
+            if activity_result is None:
                 continue
-        else:
-            # We have no details for the activity ID so skip it
-            continue
 
-        activity_kudos_file = source_dir + a + "_activityKudos.json"
+            activity = activity_result[0]
 
-        if settings["include_strava_kudos"] and exists(activity_kudos_file) and activity_details.kudos_count > 0:
-            with open(activity_kudos_file, "r") as kudos_json:
-                kudos_dict = json.loads(kudos_json.read())
-                kudos = Kudoser.Kudoser.list_from_dict_array(kudos_dict)
-        else:
-            kudos = None
-
-        activity_comments_file = source_dir + a + "_activityComments.json"
-
-        if settings["include_strava_comments"] and exists(activity_comments_file)\
-                and activity_details.comment_count > 0:
-            with open(activity_comments_file, "r") as comments_json:
-                comments_dict = json.loads(comments_json.read())
-                comments = Comment.Comment.list_from_dict_array(comments_dict)
-        else:
-            comments = None
-
-        activity_processor = ActivityProcessor.ActivityProcessor(activity_details, kudos, comments)
+        activity_processor = ActivityProcessor.ActivityProcessor(activity)
         entry_body = activity_processor.process_activity(settings["include_strava_kudos"],
                                                          settings["include_strava_comments"],
                                                          settings["include_segments"], settings["which_splits"],
@@ -113,11 +105,10 @@ def process_activities(activity_ids, settings, output_format, journal_name):
             print(entry_body)
             continue
 
-        entry_datetime = activity_details.start_date_local
-        entry_timezone = activity_details.timezone[activity_details.timezone.index(") ") + 2:]
-        entry_coords = "{0} {1}".format(activity_details.start_latlng[0], activity_details.start_latlng[1])\
-            if activity_details.start_latlng else ""
-        entry_tags = activity_details.type
+        entry_datetime = activity.start_date_local
+        entry_timezone = activity.timezone[activity.timezone.index(") ") + 2:]
+        entry_coords = "{0} {1}".format(activity.start_lat, activity.start_lng) if activity.start_lat else ""
+        entry_tags = activity.type
 
         shell_command_format = "dayone2 -j {0} --isoDate {1} --time-zone {2} --tags {3}"
         shell_command = shell_command_format.format(journal_name, entry_datetime, entry_timezone, entry_tags)
@@ -125,8 +116,8 @@ def process_activities(activity_ids, settings, output_format, journal_name):
         if entry_coords:
             shell_command += " --coordinate {0}".format(entry_coords)
 
-        if activity_details.map.polyline:
-            entry_image = mappy.get_image_url(activity_details.map.polyline)
+        if activity.map.polyline:
+            entry_image = mappy.get_image_url(activity.map.polyline)
             downloaded_image = download_activity_image(a, entry_image, source_dir)
             shell_command += " --attachments \"{0}\"".format(downloaded_image)
 
@@ -245,22 +236,10 @@ def main(arg):
         elif opt in ("-d", "--startdate"):
             start_date = arg
         elif opt in ("-t", "--activitytypes"):
-            start_date = arg
+            activity_types = arg
 
-
-    activity_ids = get_activity_ids(settings["strava_activities_file"])
-
-    if settings["include_strava_comments"] and settings["include_strava_kudos"]:
-        data_types = "all"
-    else:
-        data_types = "detail"
-        if settings["include_strava_comments"]:
-            data_types += ",comments"
-        if settings["include_strava_kudos"]:
-            data_types += ",kudos"
-
-    if not no_downloads:
-        get_data(activity_ids, data_types, settings["data_location"])
+    after = dateutil.parser.parse(start_date)
+    activity_ids = get_activity_ids(None, after, ["Run", "Ride", "Swim"])
 
     process_activities(activity_ids, settings, output_format, journal_name)
 
