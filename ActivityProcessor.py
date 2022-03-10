@@ -139,11 +139,11 @@ class ActivityProcessor:
             distance_metric = round(activity.distance / 1000, 2)
             distance_imper = round((activity.distance / 1000) * 0.6213712, 2)
 
-        pace_km_seconds = float(activity.moving_time) / float(distance_metric)
+        pace_km_seconds = float(activity.moving_time) / float(distance_metric) if distance_metric else 0
         pace_km_time = time.gmtime(pace_km_seconds)
         pace_km_time_output = time.strftime("%M:%S", pace_km_time)
 
-        segment_pace_mi_seconds = float(activity.moving_time) / float(distance_imper)
+        segment_pace_mi_seconds = float(activity.moving_time) / float(distance_imper) if distance_imper else 0
         segment_pace_mi_time = time.gmtime(segment_pace_mi_seconds)
         pace_mi_time_output = time.strftime("%M:%S", segment_pace_mi_time)
 
