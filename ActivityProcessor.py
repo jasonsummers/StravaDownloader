@@ -5,10 +5,8 @@ from typing import List
 
 class ActivityProcessor:
 
-    def __init__(self, activity: Activity, kudos, comments):
+    def __init__(self, activity: Activity):
         self.activity = activity
-        self.kudos = kudos
-        self.comments = comments
 
     @staticmethod
     def _process_segment(segment: SegmentEffort, detailed: bool):
@@ -221,11 +219,11 @@ class ActivityProcessor:
 
         return_string = self._process_activity_details(self.activity)
 
-        if include_kudos and self.kudos:
-            return_string += "  \n{0}".format(self._process_kudos(self.kudos))
+        if include_kudos and self.activity.kudos:
+            return_string += "  \n{0}".format(self._process_kudos(self.activity.kudos))
 
-        if include_comments and self.comments:
-            return_string += "  \n{0}".format(self._process_comments(self.comments))
+        if include_comments and self.activity.comments:
+            return_string += "  \n{0}".format(self._process_comments(self.activity.comments))
 
         if segments.lower() == "simple":
             return_string += "  \n{0}".format(self._process_segments(self.activity, False))
