@@ -79,13 +79,14 @@ class Activity:
                                                                metadata={"sa": relationship("SegmentEffort")})
 
     splits_metric: List[Split.Split] = field(default_factory=list, metadata={
-        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==True)")})
+        "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==True)",
+                           order_by="Split.split")})
 
     splits_standard: List[Split.Split] = field(default_factory=list, metadata={
         "sa": relationship("Split", primaryjoin="and_(Activity.id==Split.activity_id, Split.is_metric==False)",
-                           overlaps="splits_metric")})
+                           overlaps="splits_metric", order_by="Split.split")})
 
-    laps: List[Lap.Lap] = field(default_factory=list, metadata={"sa": relationship("Lap")})
+    laps: List[Lap.Lap] = field(default_factory=list, metadata={"sa": relationship("Lap", order_by="Lap.lap_index")})
     highlighted_kudosers: List[HighlightedKudoser.HighlightedKudoser] = field(default_factory=list,
                                                            metadata={"sa": relationship("HighlightedKudoser")})
 
