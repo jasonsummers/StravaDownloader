@@ -92,7 +92,8 @@ class Activity:
     best_efforts: List[BestEffort.BestEffort] = field(default_factory=list, metadata={"sa": relationship("BestEffort")})
 
     kudos: List[Kudoser.Kudoser] = field(default_factory=list, metadata={"sa": relationship("Kudoser")})
-    comments: List[Comment.Comment] = field(default_factory=list, metadata={"sa": relationship("Comment")})
+    comments: List[Comment.Comment] = field(default_factory=list,
+                                            metadata={"sa": relationship("Comment", order_by="Comment.created_at")})
 
     @staticmethod
     def from_dict(obj: Any) -> 'Activity':
